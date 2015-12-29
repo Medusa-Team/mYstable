@@ -2,11 +2,15 @@
 Medusa Communication Protocol
 '''
 
+do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
+kclasses = dict()       # kclasses obtained from medusa
+events = dict()         # events obtained from medusa
+
 import struct
 
 from comm import CommFile
 from med_attr import Attr, readAttribute, MEDUSA_COMM_ATTRNAME_MAX
-from med_kclass import Kclass
+from med_kclass import Kclass, readKclassdef
 
 DEBUG = 1
 ENDIAN = "="
@@ -18,7 +22,6 @@ ENDIAN = "="
 MEDUSA_COMM_VERSION  = 1
 MEDUSA_COMM_GREETING = 0x66007e5a
 
-MEDUSA_COMM_KCLASSNAME_MAX = 32-2
 MEDUSA_COMM_EVNAME_MAX     = 32-2
 
 # comm protocol commands; 'k' stands for kernel, 'c' for constable
@@ -37,15 +40,6 @@ MEDUSA_COMM_FETCH_ERROR    = 0x09 # k->c
 
 MEDUSA_COMM_UPDATE_REQUEST = 0x8a # c->k
 MEDUSA_COMM_UPDATE_ANSWER  = 0x0a # k->c
-
-''' medusa class definition in 'include/linux/medusa/l4/comm.h'
-    struct medusa_comm_kclass_s {
-        u_int64_t kclassid;     // unique identifier of this kclass
-        u_int16_t size;         // memory size consumed by object itself
-        char name[MEDUSA_COMM_KCLASSNAME_MAX];  // string: class name
-    }
-'''
-medusa_comm_kclass_s = (ENDIAN+"QH"+str(MEDUSA_COMM_KCLASSNAME_MAX)+"s", 8+2+MEDUSA_COMM_KCLASSNAME_MAX)
 
 # TODO TODO TODO: fix documentation in 'include/linux/medusa/l4/comm.h'
 # error in 'actbit' documentation in 'include/linux/medusa/l4/comm.h'
@@ -89,10 +83,6 @@ MED_YES =       0
 MED_NO =        1
 MED_SKIP =      2
 MED_OK =        3
-
-do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
-kclasses = dict()       # kclasses obtained from medusa
-events = dict()         # events obtained from medusa
 
 '''
 *********************************************************************
@@ -225,47 +215,11 @@ kclassdef message format
 #MEDUSA_COMM_KCLASSDEF      = 0x02 # k->c
 @registedCmd(MEDUSA_COMM_KCLASSDEF)
 def doMedusaCommKclassdef(medusa):
-        def __init__(self, buf):
-                Kclass.__init__(self, buf)
-
-        kclassid, csize, cname = \
-                struct.unpack(medusa_comm_kclass_s[0], \
-                medusa.read(medusa_comm_kclass_s[1]))
+        kclass = readKclassdef(medusa, ENDIAN)
         # TODO: raise 'kclass already defined'
-        if kclassid in kclasses:
+        if kclass.kclassid in kclasses:
                 raise MedusaCommError
-        cname = cname.decode('ascii')
-        print("REGISTER class '%s' with id %0x (size = %d) {" % (cname, kclassid, csize), end='')
-        #kclasses[kclassid] = {'size':csize, 'name':cname, 'attr':None}
-        kclass = type(cname,(Kclass,),dict(__init__ = __init__))
-        kclass.size = csize
-        kclass.name = cname
-        kclass.attr = dict()
-        kclasses[kclassid] = kclass
-
-        # read attributes
-        attrMaxOffset = -1
-        csizeReal = 0
-        attrCnt = 0
-        while True:
-                attr = readAttribute(medusa, ENDIAN)
-                if attr == None:
-                        break;
-                kclass.attr[attr.name] = attr
-                attrCnt += 1
-                if attr.offset > attrMaxOffset:
-                        csizeReal = attr.offset + attr.length
-                        attrMaxOffset = attr.offset
-                print("\n\t%s '%s' (offset = %d, len = %d)" % \
-                        (attr.typeStr, attr.name, attr.offset, attr.length), end='')
-        if attrCnt:
-                print("")
-        print("}")
-        # check for real size of object
-        if csize != csizeReal:
-                print("WARNING: real size of '%s' is %dB" % (cname, csizeReal))
-                #kclasses[kclassid]['size'] = csizeReal
-        print("")
+        kclasses[kclass.kclassid] = kclass
 
 #MEDUSA_COMM_KCLASSUNDEF    = 0x03 # k->c
 @registedCmd(MEDUSA_COMM_KCLASSUNDEF)
