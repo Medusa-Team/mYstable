@@ -114,3 +114,31 @@ def readAttribute(medusa, endian = "="):
 
         return attr
 
+class AttrInit:
+        ''' 
+        initializer reads from 'medusa' interface to initialize objects values
+        TODO:   create object factory for this purpose, because we need empty initializer
+                for 'UPDATE' medusa command
+        '''
+        def __init__(self, buf):
+                for a in sorted(self.attr):
+                        attr = self.attr[a]
+                        offset = attr.offset
+                        length = attr.length
+                        data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
+                        if len(data) == 1:
+                                data = data[0]
+                        if attr.afterUnpack:
+                                # data can be an array (i.e. strings)
+                                data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
+                                if len(data) == 1:
+                                        data = data[0]
+                        self.attr[a].val = data
+        def __str__(self):
+                s = str(self.__class__) + ' = {'
+                for a in sorted(self.attr):
+                        s += '\n\t' + str(self.attr[a])
+                if self.attr:
+                        s += '\n'
+                s += '}'
+                return str(s)
