@@ -1,8 +1,17 @@
+import struct
+
 MED_COMM_TYPE_END         = 0x00 # end of attribute list
 MED_COMM_TYPE_UNSIGNED    = 0x01 # unsigned integer attr
 MED_COMM_TYPE_SIGNED      = 0x02 # signed integer attr
 MED_COMM_TYPE_STRING      = 0x03 # string attr
 MED_COMM_TYPE_BITMAP      = 0x04 # bitmap attr
+med_comm_type = {
+        MED_COMM_TYPE_END: 'none type',
+        MED_COMM_TYPE_UNSIGNED: 'unsigned',
+        MED_COMM_TYPE_SIGNED: 'signed',
+        MED_COMM_TYPE_STRING: 'string',
+        MED_COMM_TYPE_BITMAP: 'bitmap',
+}
 
 MED_COMM_TYPE_READ_ONLY   = 0x80 # this attribute is read-only
 MED_COMM_TYPE_PRIMARY_KEY = 0x40 # this attribute is used to lookup object
@@ -50,3 +59,58 @@ class Attr:
                 else:
                         s += 'UNKNOWN ' + str(type(self.val))
                 return s
+
+''' medusa attribute definition in 'include/linux/medusa/l4/comm.h'
+    struct medusa_comm_attribute_s {
+        u_int16_t offset;       // offset of attribute in object
+        u_int16_t length;       // bytes consumed by this attribute data in object
+        u_int8_t  type;         // data type (MED_COMM_TYPE_xxx)
+        char name[MEDUSA_COMM_ATTRNAME_MAX];    // string: attribute name
+    }
+'''
+MEDUSA_COMM_ATTRNAME_MAX   = 32-5
+
+def readAttribute(medusa, endian = "="):
+        medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
+        aoffset,alength,atype,aname = \
+                struct.unpack(medusa_comm_attribute_s[0], \
+                medusa.read(medusa_comm_attribute_s[1]))
+        # finish if read end attr type
+        if atype == MED_COMM_TYPE_END:
+                return None
+        # decode name in ascii coding
+        aname = aname.decode('ascii')
+        # create Attr object
+        attr = Attr(aname, atype, aoffset, alength)
+
+        # parse attr type and fill other Attr attributes
+        atypeStr = ''
+        if atype & MED_COMM_TYPE_READ_ONLY:
+                atypeStr += 'readonly '
+                attr.isReadonly = True
+        if atype & MED_COMM_TYPE_PRIMARY_KEY:
+                atypeStr += 'primary '
+                attr.isPrimary = True
+        # clear READ_ONLY and PRIMARY_KEY bits
+        atypeStr += med_comm_type[atype & MED_COMM_TYPE_MASK]
+        attr.typeStr = atypeStr
+
+        pythonType = endian
+        if atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_SIGNED:
+                # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
+                # time struct in kernel consists from two long values
+                types = {'1':'b','2':'h','4':'i','8':'q','16':'2q'}
+                pythonType += types[str(alength)]
+        elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_UNSIGNED:
+                types = {'1':'B','2':'H','4':'I','8':'Q','16':'2Q'}
+                pythonType += types[str(alength)]
+        elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
+                pythonType += str(alength)+'s'
+                attr.afterUnpack = (bytes.decode, 'ascii')
+                attr.beforePack = (str.encode, 'ascii')
+        elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
+                pythonType += str(alength)+'s'
+        attr.pythonType = pythonType
+
+        return attr
+
