@@ -41,7 +41,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*,cover
+*.cover
 
 # Translations
 *.mo
@@ -55,3 +55,13 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# vim files
+*.sw?
+*~
+
+# debug files and logs
+git.txt
+connector.py
+logs
+medusa.bin
