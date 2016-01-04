@@ -1,4 +1,5 @@
 import struct
+import med_endian
 
 MED_COMM_TYPE_END         = 0x00 # end of attribute list
 MED_COMM_TYPE_UNSIGNED    = 0x01 # unsigned integer attr
@@ -42,10 +43,23 @@ class Attr:
                         s += self.val
                 # val type is BITMAP
                 elif type(self.val) == type(bytes()):
-                        for i in range(0,len(self.val)):
-                                if i and i % 4 == 0:
+                        if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
+                                beg = 0
+                                end = len(self.val)
+                                step = 1
+                        elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
+                                beg = len(self.val)-1
+                                end = -1
+                                step = -1
+                        else:
+                                raise(VALUE_ERROR)
+                        four = 0
+                        for i in range(beg,end,step):
+                                if four == 4:
                                         s += ':'
+                                        four = 0
                                 s += '{:02x}'.format(self.val[i])
+                                four += 1
                 elif type(self.val) == type(list()):
                         # val type is array of STRING
                         if self.type & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
