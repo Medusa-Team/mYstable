@@ -65,9 +65,9 @@ def readEvtypedef(medusa, ENDIAN = "="):
         evid, size, actbit, ev_kclass0, ev_kclass1, name, ev_name0, ev_name1 = \
                 struct.unpack(medusa_comm_evtype_s[0], \
                 medusa.read(medusa_comm_evtype_s[1]))
-        name = name.decode('ascii')
-        ev_name0 = ev_name0.decode('ascii')
-        ev_name1 = ev_name1.decode('ascii')
+        name = name.decode('ascii').split('\x00',1)[0]
+        ev_name0 = ev_name0.decode('ascii').split('\x00',1)[0]
+        ev_name1 = ev_name1.decode('ascii').split('\x00',1)[0]
         if ev_name0 == ev_name1:
                 ev_kclass1 = None
                 ev_name1 = None

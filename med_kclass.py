@@ -42,7 +42,7 @@ def readKclassdef(medusa, ENDIAN = "="):
         kclassid, csize, cname = \
                 struct.unpack(medusa_comm_kclass_s[0], \
                 medusa.read(medusa_comm_kclass_s[1]))
-        cname = cname.decode('ascii')
+        cname = cname.decode('ascii').split('\x00',1)[0]
         print("REGISTER class '%s' with id %0x (size = %d) {" % (cname, kclassid, csize), end='')
         #kclasses[kclassid] = {'size':csize, 'name':cname, 'attr':None}
         kclass = type(cname,(Kclass,),dict(__init__ = __init__))

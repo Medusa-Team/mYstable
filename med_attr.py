@@ -93,7 +93,7 @@ def readAttribute(medusa, endian = "="):
         if atype == MED_COMM_TYPE_END:
                 return None
         # decode name in ascii coding
-        aname = aname.decode('ascii')
+        aname = aname.decode('ascii').split('\x00',1)[0]
         # create Attr object
         attr = Attr(aname, atype, aoffset, alength)
 
