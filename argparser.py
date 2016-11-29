@@ -1,22 +1,41 @@
-default_conf_path = '/home/juraj/Documents/mYstable/config/medusa.conf'
+import argparse
 
+class Parser:
+    _instance = None
+    _default_conf_path = '/home/juraj/Documents/mYstable/config/medusa.conf'
 
-def open_default_conf_file():
-    config_file = open(default_conf_path, mode='r')
-    return config_file
+    def __init__(self):
+        if self._initialized is True:
+            return
 
+        self._parser = argparse.ArgumentParser()
 
-def open_config_file(args):
-    if args.config:  # prepinac -c bol zadany
-        try:
-            config_file = open(args.config, mode='r')
-            print("Config file: " + config_file.name + " opened.")
-        except IOError:
-            config_file = open_default_conf_file()
-            print("Config file was not found. Default file used: " + config_file.name)
+        #here command line arguments should be specified
+        self._add_commandline_argument()
 
-    else:  # prepinac -c nebol zadany, pouzi defualt cestu k suboru
-        config_file = open_default_conf_file()
-        print("Default config file used: " + config_file.name)
+        self._handle_arguments()
 
-    return config_file
+    def __new__(cls, *args, **kwargs):
+        if Parser._instance is None:
+            Parser._instance = object.__new__(cls)
+            Parser._instance._initialized = False
+
+        return Parser._instance
+
+    def _add_commandline_argument(self):
+        'Here should be specified arguments from commandline we want to work with'
+        self._parser.add_argument("-c", "--config",
+                                  metavar="<filename>",
+                                  dest="config_file",
+                                  default=Parser._default_conf_path,
+                                  type=argparse.FileType('r'),
+                                  help="sets path to configuration file")
+
+    def _handle_arguments(self):
+
+        arguments = self._parser.parse_args()
+        attributes = arguments.__dict__
+
+        for arg, value in attributes.items(): #loop in given arguments from command line and set attributes equal
+            setattr(self, arg, value)         #to them
+

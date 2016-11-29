@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import threading
-import argparse
 import argparser
 
 from mcp import doCommunicate
@@ -14,12 +13,9 @@ class constableThread(threading.Thread):
                 self.fnc()
 
 def main():
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-c", "--config", metavar="<filename>", dest="config", help="sets path to configuration file")
-        args = parser.parse_args()
 
-        configFile = argparser.open_config_file(args)
-
+        parser = argparser.Parser()
+        print(parser.config_file.name)
 
 '''     threads = []
 
