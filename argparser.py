@@ -14,6 +14,7 @@ class Parser:
         self._add_commandline_argument()
 
         self._handle_arguments()
+        self._initialized = True
 
     def __new__(cls, *args, **kwargs):
         if Parser._instance is None:
