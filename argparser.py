@@ -2,7 +2,7 @@ import argparse
 
 class Parser:
     _instance = None
-    _default_conf_path = '/home/juraj/Documents/mYstable/config/medusa.conf'
+    _default_conf_path = '/home/juraj/Documents/mYstable/config/config.json'
 
     def __init__(self):
         if self._initialized is True:

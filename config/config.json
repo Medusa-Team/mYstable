@@ -1,0 +1,18 @@
+{
+	"hosts": [{
+		"host_name": "Matus",
+		"host_confdir": "home/juraj/Documents/MeduzaConfs/Matus",
+		"host_commtype": "file",
+		"host_commdev": "default_file_path_Matus"
+	}, {
+		"host_name": "Pavol",
+		"host_confdir": "home/juraj/Documents/MeduzaConfs/Pavol",
+		"host_commtype": "file",
+		"host_commdev": "default_file_path_Pavol"
+	}, {
+		"host_name": "Juraj",
+		"host_confdir": "home/juraj/Documents/MeduzaConfs/Juraj",
+		"host_commtype": "file",
+		"host_commdev": "default_file_path_Juraj"
+	}]
+}
