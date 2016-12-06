@@ -2,6 +2,7 @@
 
 import threading
 import argparser
+import config_file_reader
 
 from mcp import doCommunicate
 
@@ -15,7 +16,8 @@ class constableThread(threading.Thread):
 def main():
 
         parser = argparser.Parser()
-        print(parser.config_file.name)
+        conf_reader = config_file_reader.ConfigFileReader(parser.config_file)
+        conf_reader.read_args()
 
 '''     threads = []
 

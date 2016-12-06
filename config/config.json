@@ -2,7 +2,7 @@
 	"hosts": [{
 		"host_name": "Matus",
 		"host_confdir": "home/juraj/Documents/MeduzaConfs/Matus",
-		"host_commtype": "file",
+		"host_commtype": "FILE",
 		"host_commdev": "default_file_path_Matus"
 	}, {
 		"host_name": "Pavol",
