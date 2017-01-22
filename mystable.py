@@ -17,19 +17,27 @@ def main():
 
         parser = argparser.Parser()
         conf_reader = config_file_reader.ConfigFileReader(parser.config_file)
-        conf_reader.read_args()
+        try:
+            conf_reader.read_and_check_args()
+        except Exception as err:
+            for arg in err.args:
+                print(arg)
+            return
 
-'''     threads = []
+
+        #make_client_instances here!!!
+
+        threads = []
 
         threads.append(constableThread(doCommunicate))
 
         for t in threads:
-                t.start()
+            t.start()
 
         for t in threads:
-                t.join()
+            t.join()
 
-'''
+
 if __name__ == "__main__":
         main()
 
