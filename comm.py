@@ -38,8 +38,12 @@ def getSupportedComms():
 
 class Comm:
 
-        def __init__(self):
-                raise NotImplementedError
+        def __init__(self, host):
+            self.host_name = host['host_name']
+            self.host_confdir = host['host_confdir']
+            self.host_commtype = host['host_commtype']
+            self.host_commdev = host['host_commdev']
+
         def __enter__(self):
                 raise NotImplementedError
         def __exit__(self, *args):
@@ -49,16 +53,3 @@ class Comm:
         def write(self, what):
                 raise NotImplementedError
 
-class CommFile(Comm):
-        def __init__(self, medFile='/dev/medusa'):
-                self.fd = None
-                self.fname = medFile
-        def __enter__(self):
-                self.fd = os.open(self.fname, os.O_RDWR)
-                return self
-        def __exit__(self, *args):
-                os.close(self.fd)
-        def read(self, size):
-                return os.read(self.fd, size)
-        def write(self, what):
-                return os.write(self.fd, what)

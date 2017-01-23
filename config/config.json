@@ -7,7 +7,7 @@
 		"host_name": "Pavol",
 		"host_confdir": "/home/juraj/Documents/Meduza",
 		"host_commtype": "file",
-		"host_commdev": "default_file_path_Pavol"
+		"host_commdev": "/home/juraj/Documents/mYstable/config/config"
 	}, {
 		"host_name": "Juraj",
 		"host_confdir": "/home/juraj/Documents/Meduza",

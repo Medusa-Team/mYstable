@@ -24,20 +24,23 @@ def main():
                 print(arg)
             return
 
-
-        #make_client_instances here!!!
+        comms = []
+        for host_config in conf_reader.hosts:
+            #get apropriate type of object for actual host_config
+            comm_constructor = conf_reader.supportedCommTypes[host_config['host_commtype']][0]
+            # create instance of apropriate 'comm' with apripriate config
+            comms.append(comm_constructor(host_config))
 
         threads = []
+        for comm in comms:
+            threads.append(constableThread(doCommunicate(comm)))
 
-        threads.append(constableThread(doCommunicate))
-
-        for t in threads:
+'''        for t in threads:
             t.start()
 
         for t in threads:
             t.join()
-
-
+'''
 if __name__ == "__main__":
         main()
 

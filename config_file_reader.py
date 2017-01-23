@@ -65,7 +65,7 @@ class ConfigFileReader:
     def read_and_check_args(self):
 
             self.hosts = json.load(self.config_file)
-            for host in self.hosts: #convert all commtypes to lowercase to simplify later checks
+            for host in self.hosts: #convert all commtypes from config_file to lowercase to simplify later checks
                 host['host_commtype'] = host['host_commtype'].lower()
 
             self._check_hosts_names() #check if hostname is unique

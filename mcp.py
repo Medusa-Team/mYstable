@@ -4,7 +4,7 @@ Medusa Communication Protocol
 
 import struct
 
-from comm import CommFile
+
 import med_endian
 #from med_attr import Attr, readAttribute, MEDUSA_COMM_ATTRNAME_MAX
 from med_kclass import Kclass, readKclassdef
@@ -12,9 +12,12 @@ from med_evtype import Evtype, readEvtypedef
 from helpers import printHex
 
 do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
+
+hosts = dict()
+'''
 kclasses = dict()       # kclasses obtained from medusa
 events = dict()         # events obtained from medusa
-
+'''
 DEBUG = 1
 
 # TODO: protokol zavisly od implementacie v jadre!!!
@@ -85,11 +88,15 @@ authrequest message format:
 # TODO requests -> locking
 requests = []
 @registerCmd(MEDUSA_COMM_AUTHREQUEST)
-def doMedusaCommAuthrequest(medusa, acctype_id = None):
+def doMedusaCommAuthrequest(host, acctype_id = None):
         if DEBUG:
                 print('------- AUTHREQUEST BEG -------')
         # remember that acctype_id is just readed
-        request_id = struct.unpack(med_endian.ENDIAN+"I", medusa.read(4))[0]
+        try:
+            request_id = struct.unpack(med_endian.ENDIAN+"I", host.read(4))[0]
+        except OSError as err:
+            print_err(err)
+
         #print("DEBUG: request_id:", '{:08x}'.format(request_id))
         acctype = events.get(acctype_id)
         # TODO: MedusaCommError -> MedusaWhatEver
@@ -102,7 +109,11 @@ def doMedusaCommAuthrequest(medusa, acctype_id = None):
                 print(", %s" % acctype.objName, end='')
         print()
 
-        evid = struct.unpack(med_endian.ENDIAN+"Q", medusa.read(8))[0]
+        try:
+            evid = struct.unpack(med_endian.ENDIAN+"Q", host.read(8))[0]
+        except OSError as err:
+            print_err(err)
+
         evtype = events.get(evid)
         # TODO: MedusaCommError -> MedusaWhatEver
         if evtype == None:
@@ -111,7 +122,11 @@ def doMedusaCommAuthrequest(medusa, acctype_id = None):
                 print("WARNING: access type differs from event type")
         evbuf = b''
         if acctype.size-8 > 0:
-                evbuf = (8*(None,)) + struct.unpack(med_endian.ENDIAN+str(acctype.size-8)+"B", medusa.read(acctype.size-8))
+                try:
+                    evbuf = (8*(None,)) + struct.unpack(med_endian.ENDIAN+str(acctype.size-8)+"B", host.read(acctype.size-8))
+                except OSError as err:
+                        print_err(err)
+
         event = evtype(evbuf)
         if DEBUG:
                 print("DEBUG: access event '" + evtype.name + "'", event)
@@ -121,7 +136,11 @@ def doMedusaCommAuthrequest(medusa, acctype_id = None):
         # TODO: MedusaCommError -> MedusaWhatEver
         if subType == None:
                 raise(MedusaCommError("unknown subject KCLASS type for: '"+acctype.subName+"'"))
-        sub = subType(struct.unpack(med_endian.ENDIAN+str(subType.size)+"B", medusa.read(subType.size)))
+        try:
+            sub = subType(struct.unpack(med_endian.ENDIAN+str(subType.size)+"B", host.read(subType.size)))
+        except OSError as err:
+            print_err(err)
+
         if DEBUG:
                 print("DEBUG: subject '" + acctype.subName + "' of", sub)
 
@@ -132,7 +151,11 @@ def doMedusaCommAuthrequest(medusa, acctype_id = None):
                 # TODO: MedusaCommError -> MedusaWhatEver
                 if objType == None:
                         raise(MedusaCommError("unknown object KCLASS type for: '"+acctype.objName+"'"))
-                obj = objType(struct.unpack(med_endian.ENDIAN+str(objType.size)+"B", medusa.read(objType.size)))
+                try:
+                    obj = objType(struct.unpack(med_endian.ENDIAN+str(objType.size)+"B", host.read(objType.size)))
+                except OSError as err:
+                    print_err(err)
+
                 if DEBUG:
                         print("DEBUG: object '" + acctype.objName + "' of", obj)
 
@@ -142,7 +165,7 @@ def doMedusaCommAuthrequest(medusa, acctype_id = None):
         # TODO TODO TODO decide...
         # decide(event, sub, obj)
 
-        doMedusaCommAuthanswer(medusa, requests.pop(), MED_OK)
+        doMedusaCommAuthanswer(host, requests.pop(), MED_OK)
 
 '''
 authanswer message format:
@@ -154,7 +177,7 @@ authanswer message format:
 '''
 #MEDUSA_COMM_AUTHANSWER     = 0x81 # c->k
 @registerCmd(MEDUSA_COMM_AUTHANSWER)
-def doMedusaCommAuthanswer(medusa, request_id = None, result = MED_NO):
+def doMedusaCommAuthanswer(host, request_id = None, result = MED_NO):
         cmd = MEDUSA_COMM_AUTHANSWER
         # TODO raise
         if request_id == None:
@@ -163,7 +186,11 @@ def doMedusaCommAuthanswer(medusa, request_id = None, result = MED_NO):
         if DEBUG:
                 printHex("DEBUG: answer: ", answer)
                 print()
-        medusa.write(answer)
+
+        try:
+            host.write(answer)
+        except OSError as err:
+            print_err(err)
 
 '''
 kclassdef message format
@@ -176,17 +203,17 @@ kclassdef message format
 '''
 #MEDUSA_COMM_KCLASSDEF      = 0x02 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSDEF)
-def doMedusaCommKclassdef(medusa):
+def doMedusaCommKclassdef(host):
         global kclasses
-        kclass = readKclassdef(medusa, med_endian.ENDIAN)
+        kclass = readKclassdef(host, med_endian.ENDIAN)
         # TODO: raise 'kclass already defined'
-        if kclass.kclassid in kclasses:
+        if kclass.kclassid in hosts[host.host_name]['kclasses']:
                 raise MedusaCommError
         kclasses[kclass.kclassid] = kclass
 
 #MEDUSA_COMM_KCLASSUNDEF    = 0x03 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSUNDEF)
-def doMedusaCommKclassundef(medusa):
+def doMedusaCommKclassundef(host):
         print("TODO: doMedusaCommKclassundef")
         raise(NotImplementedError)
 
@@ -201,9 +228,9 @@ evtypedef message format
 '''
 #MEDUSA_COMM_EVTYPEDEF      = 0x04 # k->c
 @registerCmd(MEDUSA_COMM_EVTYPEDEF)
-def doMedusaCommEvtypedef(medusa):
+def doMedusaCommEvtypedef(host):
         global events
-        event = readEvtypedef(medusa, med_endian.ENDIAN)
+        event = readEvtypedef(host, med_endian.ENDIAN)
         # TODO: raise 'event already defined'
         if event.evid in events:
                 raise MedusaCommError
@@ -211,7 +238,7 @@ def doMedusaCommEvtypedef(medusa):
 
 #MEDUSA_COMM_EVTYPEUNDEF    = 0x05 # k->c
 @registerCmd(MEDUSA_COMM_EVTYPEUNDEF)
-def doMedusaCommEvtypeundef(medusa):
+def doMedusaCommEvtypeundef(host):
         print("TODO: doMedusaCommEvtypeundef")
         raise(NotImplementedError)
 
@@ -226,7 +253,7 @@ fetch_request message format
 '''
 #MEDUSA_COMM_FETCH_REQUEST  = 0x88 # c->k
 @registerCmd(MEDUSA_COMM_FETCH_REQUEST)
-def doMedusaCommFetchRequest(medusa):
+def doMedusaCommFetchRequest(host):
         print("TODO: doMedusaCommFetchRequest")
         raise(NotImplementedError)
 
@@ -242,7 +269,7 @@ fetch_answer message format
 '''
 #MEDUSA_COMM_FETCH_ANSWER   = 0x08 # k->c
 @registerCmd(MEDUSA_COMM_FETCH_ANSWER)
-def doMedusaCommFetchAnswer(medusa):
+def doMedusaCommFetchAnswer(host):
         print("TODO: doMedusaCommFetchAnswer")
         raise(NotImplementedError)
 
@@ -251,7 +278,7 @@ fetch_error message format
 '''
 #MEDUSA_COMM_FETCH_ERROR    = 0x09 # k->c
 @registerCmd(MEDUSA_COMM_FETCH_ERROR)
-def doMedusaCommFetchError(medusa):
+def doMedusaCommFetchError(host):
         print("TODO: doMedusaCommFetchError")
         raise(NotImplementedError)
 
@@ -266,7 +293,7 @@ update_request message format
 '''
 #MEDUSA_COMM_UPDATE_REQUEST = 0x8a # c->k
 @registerCmd(MEDUSA_COMM_UPDATE_REQUEST)
-def doMedusaCommUpdateRequest(medusa):
+def doMedusaCommUpdateRequest(host):
         print("TODO: doMedusaCommUpdateRequest")
         raise(NotImplementedError)
 
@@ -282,22 +309,33 @@ update_answer message format
 '''
 #MEDUSA_COMM_UPDATE_ANSWER  = 0x0a # k->c
 @registerCmd(MEDUSA_COMM_UPDATE_ANSWER)
-def doMedusaCommUpdateAnswer(medusa):
+def doMedusaCommUpdateAnswer(host):
         print("TODO: doMedusaCommUpdateAnswer")
         raise(NotImplementedError)
 
 #UNKNOWN CMD
-def doMedusaCommUnknown(medusa):
+def doMedusaCommUnknown(host):
         raise( MedusaCommError() )
+
+def print_err(err):
+    for arg in err.args:
+        print(arg)
 
 '''
 **************************************************************
 '''
 
-def doCommunicate():
-        with CommFile('/dev/medusa') as medusa:
+def doCommunicate(comm):
+        hosts[comm.host_name] = dict()
+        hosts[comm.host_name]['kclasses'] = dict()
+        hosts[comm.host_name]['events'] = dict()
+        with comm as host:
                 # read greeting and set byte order
-                greeting = medusa.read(8)
+                try:
+                    greeting = host.read(8)
+                except OSError as err:
+                    print_err(err)
+
                 end_lit = b"\x5a\x7e\x00\x66\x00\x00\x00\x00"
                 end_big = b"\x00\x00\x00\x00\x66\x00\x7e\x5a"
                 if greeting == end_big:
@@ -312,13 +350,20 @@ def doCommunicate():
 
                 while True:
                         # read next chunk of data to do
-                        id = struct.unpack(med_endian.ENDIAN+"Q",medusa.read(8))[0]
+                        try:
+                            id = struct.unpack(med_endian.ENDIAN+"Q",host.read(8))[0]
+                        except OSError as err:
+                            print_err(err)
 
                         # if 'id' == 0, do (un)def kevents/kclasses...
                         if id == 0:
-                                cmd = medusa.read(4)
+                                try:
+                                    cmd = host.read(4)
+                                except OSError as err:
+                                        print_err(err)
+
                                 cmd = struct.unpack(med_endian.ENDIAN+"I",cmd)[0]
-                                do_cmd.get(cmd, doMedusaCommUnknown)(medusa)
+                                do_cmd.get(cmd, doMedusaCommUnknown)(host)
                         else:
-                                doMedusaCommAuthrequest(medusa, id)
+                                doMedusaCommAuthrequest(host, id)
 
