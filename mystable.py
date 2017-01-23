@@ -35,12 +35,12 @@ def main():
         for comm in comms:
             threads.append(constableThread(doCommunicate(comm)))
 
-'''        for t in threads:
+        for t in threads:
             t.start()
 
         for t in threads:
             t.join()
-'''
+
 if __name__ == "__main__":
         main()
 
