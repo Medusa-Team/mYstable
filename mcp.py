@@ -321,6 +321,11 @@ def print_err(err):
     for arg in err.args:
         print(arg)
 
+def free_memory(comm):
+    del hosts[comm.host_name]['kclass']
+    del hosts[comm.host_name]['events']
+    del hosts[comm.host_name]
+
 '''
 **************************************************************
 '''
@@ -333,8 +338,11 @@ def doCommunicate(comm):
                 # read greeting and set byte order
                 try:
                     greeting = host.read(8)
-                except OSError as err:
+                except Exception as err: #terminate this thread free hosts[comm.host_name]
                     print_err(err)
+                    free_memory(comm)
+                    return -1
+
 
                 end_lit = b"\x5a\x7e\x00\x66\x00\x00\x00\x00"
                 end_big = b"\x00\x00\x00\x00\x66\x00\x7e\x5a"
@@ -352,15 +360,19 @@ def doCommunicate(comm):
                         # read next chunk of data to do
                         try:
                             id = struct.unpack(med_endian.ENDIAN+"Q",host.read(8))[0]
-                        except OSError as err:
+                        except Exception as err: #terminate this thread free hosts[comm.host_name]
                             print_err(err)
+                            free_memory(comm)
+                            return -1
 
                         # if 'id' == 0, do (un)def kevents/kclasses...
                         if id == 0:
                                 try:
                                     cmd = host.read(4)
-                                except OSError as err:
-                                        print_err(err)
+                                except Exception as err: #terminate this thread free hosts[comm.host_name]
+                                    print_err(err)
+                                    free_memory(comm)
+                                    return -1
 
                                 cmd = struct.unpack(med_endian.ENDIAN+"I",cmd)[0]
                                 do_cmd.get(cmd, doMedusaCommUnknown)(host)

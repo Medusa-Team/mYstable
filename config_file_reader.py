@@ -42,6 +42,7 @@ class ConfigFileReader:
             raise AttributeError('Combination of attributes "host_commtype" + "host_commdev" must be unique value')
 
         #call check method for each host regarding its commtype
+        # sem si posielat pary (host_commdev, host_index, a mozno aj host_name)
         for comm_type, comm_type_details in self.supportedCommTypes.items():
             comm_type_details[1]([host["host_commdev"] for host in self.hosts if host["host_commtype"].lower() == comm_type])
 
