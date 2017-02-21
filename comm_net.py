@@ -21,7 +21,7 @@ def ping(host):
     if sys == 'linux':
         ping_cmd = '-c 1 ' + host + ' >> /dev/null'
     else:
-        ping_cmd = '-n 1 ' + host + ' > NUL'
+        raise NotImplementedError
 
     # Ping
     return os.system('ping ' + ping_cmd) == 0
