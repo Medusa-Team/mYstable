@@ -1,7 +1,8 @@
 import json
 import os
-import socket
+
 from comm import getSupportedComms
+from comm_net import check_net_IP_duplicities
 
 class ConfigFileReader:
     """Class reading configuration settings from JSON file"""
@@ -46,27 +47,14 @@ class ConfigFileReader:
             comm_type_details[1]([host["host_commdev"] for host in self.hosts if host["host_commtype"].lower() == comm_type])
 
 
-    def _check_net_IP_duplicities(self):
-        net_devices = [host['host_commdev'] for host in self.hosts if host['host_commtype'] == 'net']
-        unique_net_devs = set()
-
-        for net_dev in net_devices:
-            try:
-                dns = socket.getaddrinfo(net_dev, None)
-            except socket.gaierror:
-                raise ConnectionError('Cannot perform DNS lookup for host ' + net_dev)
-            else:
-                unique_net_devs.add(dns[0][4][0]) # add IP address of actual net device
-
-        if len(net_devices) != len(unique_net_devs):
-            raise AttributeError("Each host of type 'net' must have unique network device")
-
-
     def read_and_check_args(self):
 
             self.hosts = json.load(self.config_file)
-            for host in self.hosts: #convert all commtypes to lowercase to simplify later checks
+
+            # convert all commtypes to lowercase to simplify later checks + add indicies
+            for index,host in enumerate(self.hosts):
                 host['host_commtype'] = host['host_commtype'].lower()
+                host['host_index'] = index
 
             self._check_hosts_names() #check if hostname is unique
 
@@ -74,7 +62,7 @@ class ConfigFileReader:
                 self._check_host_config(host) # check if host has supported commtype
                                               # and if confdir is readable
 
-            self._check_net_IP_duplicities()  # check if each net host has unique net device
+            check_net_IP_duplicities(self.hosts)  # check if each net host has unique net device
             self._check_hosts_devs() # check if compound of commtype + commdev is unique
                                      # to avoid situation that many hosts will be referencing
                                      # to 1 file / net interface etc.
