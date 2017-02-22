@@ -13,4 +13,10 @@
 		"host_confdir": "/home/juraj/Documents/Meduza",
 		"host_commtype": "net",
 		"host_commdev": "216.58.206.4"
+	},
+	{
+		"host_name": "Matus",
+		"host_confdir": "/home/juraj/Documents/Meduza",
+		"host_commtype": "NeT",
+		"host_commdev": "www.google.sk"
 	}]

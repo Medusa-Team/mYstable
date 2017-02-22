@@ -7,14 +7,26 @@ def getCommType():
 
 def checkNet(hosts):
 
+    good = []
+    conflict =[]
+    wrong = []
+
     for host in hosts:
         res = ping(host)
         if res is False:
             # tu co zhodme cely konfig? alebo len vypisat ze unable to ping host...
-            raise ConnectionError('Unable ping host ' + host)
+            pass
+            #raise ConnectionError('Unable ping host ' + host)
+
+    return (good, conflict, wrong)
 
 
 def check_net_IP_duplicities(hosts):
+
+    good = []
+    conflict = []
+    wrong = []
+
     net_devices = [host['host_commdev'] for host in hosts if host['host_commtype'] == 'net']
     unique_net_devs = set()
 
@@ -22,13 +34,16 @@ def check_net_IP_duplicities(hosts):
         try:
             dns = socket.getaddrinfo(net_dev, None)
         except socket.gaierror:
-            raise ConnectionError('Cannot perform DNS lookup for host ' + net_dev)
+            pass
+            #raise ConnectionError('Cannot perform DNS lookup for host ' + net_dev)
         else:
             unique_net_devs.add(dns[0][4][0])  # add IP address of actual net device
 
     if len(net_devices) != len(unique_net_devs):
-        raise AttributeError("Each host of type 'net' must have unique network device")
+        pass
+        #raise AttributeError("Each host of type 'net' must have unique network device")
 
+    return (good, conflict, wrong)
 
 def ping(host):
     """
