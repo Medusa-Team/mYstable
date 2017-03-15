@@ -22,11 +22,11 @@ def main():
         except Exception as err:
             for arg in err.args:
                 print(arg)
-            return
+                return
 
 
         #make_client_instances here!!!
-
+"""
         threads = []
 
         threads.append(constableThread(doCommunicate))
@@ -36,7 +36,7 @@ def main():
 
         for t in threads:
             t.join()
-
+"""
 
 if __name__ == "__main__":
         main()

@@ -1,49 +1,54 @@
-import os, platform
+import os
+import platform
 import socket
+import dns.resolver
 
 def getCommType():
 #    print("getcommtype")
     return {"net": ("CommNet", checkNet, __name__)}
 
-def checkNet(hosts):
-
-    good = []
-    conflict =[]
-    wrong = []
+def checkNet(hosts, good, conflict, wrong):
 
     for host in hosts:
-        res = ping(host)
-        if res is False:
-            # tu co zhodme cely konfig? alebo len vypisat ze unable to ping host...
-            pass
-            #raise ConnectionError('Unable ping host ' + host)
+        remote_device = host['host_commdev']
 
-    return (good, conflict, wrong)
+        result = ping(remote_device)
+        if result is False:
+            wrong.append(host)
+            continue
+
+    check_net_IP_duplicities(hosts, good, conflict, wrong)
 
 
-def check_net_IP_duplicities(hosts):
+def check_net_IP_duplicities(hosts, good, conflict, wrong):
 
-    good = []
-    conflict = []
-    wrong = []
+    resolver = dns.resolver.Resolver()
+    resolver.timeout = 2 #2 seconds time out if no response to avoid long waiting
 
-    net_devices = [host['host_commdev'] for host in hosts if host['host_commtype'] == 'net']
-    unique_net_devs = set()
+    dns_lookups = dict()
+    for host in hosts:
+        name = host['host_name']
+        net_addres = host['host_commdev']
 
-    for net_dev in net_devices:
+        # store dns lookups for each host separately
         try:
-            dns = socket.getaddrinfo(net_dev, None)
-        except socket.gaierror:
-            pass
-            #raise ConnectionError('Cannot perform DNS lookup for host ' + net_dev)
+            answer = resolver.query(net_addres)
+        except:
+            pass  #TODO TODO TODO
+            # wrong.append(host)
         else:
-            unique_net_devs.add(dns[0][4][0])  # add IP address of actual net device
+            addr_set = set(rdata.address for rdata in answer)
+            dns_lookups[name] = addr_set
 
-    if len(net_devices) != len(unique_net_devs):
-        pass
-        #raise AttributeError("Each host of type 'net' must have unique network device")
+    host_names_to_del = []
+    for name1,set1 in dns_lookups.values(): # je to dobreeee???? dvojity for na tom istom???
+        for name2,set2 in dns_lookups.values():
+            if bool( set1.intersection(set2)) is True: #if intersection is non empty set
+                host_names_to_del.append(name1)
+                host_names_to_del.append(name2)
 
-    return (good, conflict, wrong)
+    # here find hosts with name and append it to list conflict
+
 
 def ping(host):
     """
@@ -51,7 +56,8 @@ def ping(host):
     """
     sys = platform.system().lower()
     if sys == 'linux':
-        ping_cmd = '-c 1 ' + host + ' >> /dev/null'
+        #sent only 1 packet and wait for response max 1 second
+        ping_cmd = '-c 1 -W 1 ' + host + ' >> /dev/null'
     else:
         raise NotImplementedError
 

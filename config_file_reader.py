@@ -41,8 +41,8 @@ class ConfigFileReader:
         for host in self.hosts:
             name = host['host_name']
 
-            hosts_to_del.setdefault(name, []).append(host)
-
+            hosts_to_del.setdefault(name, []).append(host) #in case it exists append to list host
+                                                           # otherwise creates new list with host
         for values_to_del in hosts_to_del.values():
             if len(values_to_del) > 1:
                 self._delete_hosts(values_to_del)
@@ -74,27 +74,57 @@ class ConfigFileReader:
 
         self._delete_hosts(hosts_to_del)
 
+    def _handle_conflict_and_wrong(self, conflict, wrong):
+
+        #here should be custom processing for confilc and wrong hosts
+        #default behaviour - remove conflict and wrong hosts for all types from the list of hosts to be processed
+        #instead of 'switch case', dictionary can be used and function of handling can be implemented
+        #in apropriate source code from comm_type
+        self._delete_hosts(conflict)
+        self._delete_hosts(wrong)
+
     def _check_hosts_devs(self):
 
         good = []
         conflict = []
         wrong = []
 
-        devices = set(host['host_commtype']+host["host_commdev"] for host in self.hosts)
+        hosts_to_del = []
 
-        if len(devices) != len(self.hosts):
-            raise AttributeError('Combination of attributes "host_commtype" + "host_commdev" must be unique value')
+        concats = dict()
+        for host in self.hosts:
+            host_concat = host['host_commtype'] + host["host_commdev"]
 
-        #call check method for each host regarding its commtype
+            concats.setdefault(host_concat, []).append(host)
+
+        for value in concats.values():
+            # couple hosts has equal combination type+dev
+            if len(value) > 1:
+                conflict.extend(value)
+
+
+        #call check method for each host according to its commtype
         for comm_type, comm_type_details in self.supportedCommTypes.items():
-            devices = [host["host_commdev"] for host in self.hosts if host["host_commtype"] == comm_type]
-            (good, conflict, wrong) = comm_type_details[1](devices)
+           # get hosts with devices of one type
+            host_devs = [host for host in self.hosts if host["host_commtype"] == comm_type]
+            comm_type_details[1](host_devs, good, conflict, wrong)
 
-        pass
+        #handle conflict and wrong devs for actual type
+        self._handle_conflict_and_wrong(conflict, wrong)
+
+    def _add_indexes(self):
+        for index, host in enumerate(self.hosts):
+            host['host_index'] = index
 
     def _delete_hosts(self, hosts_to_delete):
+
         for host in hosts_to_delete:
-            self.hosts.remove(host)
+            try:
+                self.hosts.remove(host)
+            except ValueError:
+                pass # NOT AN ERROR - deleting non existing host from self.hosts
+                     # one host can occur multiple times in list because of many checks
+                     # so if host is not there its OK -> anyway it may not be there
 
     def read_and_check_args(self):
 
@@ -109,3 +139,5 @@ class ConfigFileReader:
         self._check_hosts_devs() # check if compound of commtype + commdev is unique
                                   # to avoid situation that many hosts will be referencing
                                   # to 1 file / net interface etc.
+
+        self._add_indexes() #add index for each host in list
