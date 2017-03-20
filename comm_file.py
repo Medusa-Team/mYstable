@@ -15,7 +15,6 @@ def checkFiles(hosts, good, conflict, wrong):
 
     inodes = dict() #mapping inode -> host(s)
 
-
     for host in hosts:
         # check if path is path to file,
         file = host['host_commdev']
@@ -36,10 +35,10 @@ def checkFiles(hosts, good, conflict, wrong):
 
         inodes.setdefault(stat_info, []).append(host)
 
-    for value in inodes.values():
+    for inode_hosts in inodes.values():
         # couple hosts are sharing one inode - conflict
-        if len(value) > 1:
-            conflict.extend(value)
+        if len(inode_hosts) > 1:
+            conflict.extend(inode_hosts)
         else:
-            # inode is owned by unique file
-            good.append(value)
+            # inode is owned by unique file and is accessible for writing
+            good.append(inode_hosts)

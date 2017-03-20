@@ -1,7 +1,7 @@
 import os
 import platform
-import socket
 import dns.resolver
+import subprocess
 
 def getCommType():
 #    print("getcommtype")
@@ -9,23 +9,25 @@ def getCommType():
 
 def checkNet(hosts, good, conflict, wrong):
 
-    for host in hosts:
+    loc_hosts = hosts[:] # make a copy
+
+    for host in loc_hosts:
         remote_device = host['host_commdev']
 
         result = ping(remote_device)
         if result is False:
             wrong.append(host)
-            continue
+            loc_hosts.remove(host) # do not take hosts we cannot ping
 
-    check_net_IP_duplicities(hosts, good, conflict, wrong)
+    check_net_IP_duplicities(loc_hosts, good, conflict, wrong)
 
 
 def check_net_IP_duplicities(hosts, good, conflict, wrong):
 
     resolver = dns.resolver.Resolver()
-    resolver.timeout = 2 #2 seconds time out if no response to avoid long waiting
+    resolver.timeout = 1 #1 seconds time out if no response to avoid long waiting
 
-    dns_lookups = dict()
+    ip_for_hosts = dict() # mapping IP addres -> host
     for host in hosts:
         name = host['host_name']
         net_addres = host['host_commdev']
@@ -33,33 +35,36 @@ def check_net_IP_duplicities(hosts, good, conflict, wrong):
         # store dns lookups for each host separately
         try:
             answer = resolver.query(net_addres)
-        except:
-            pass  #TODO TODO TODO
-            # wrong.append(host)
+        except Exception as err:
+            wrong.append(host)
         else:
             addr_set = set(rdata.address for rdata in answer)
-            dns_lookups[name] = addr_set
+            for addres in addr_set: #store mapping IP -> list of hosts
+                ip_for_hosts.setdefault(addres, []).append(host)
 
-    host_names_to_del = []
-    for name1,set1 in dns_lookups.values(): # je to dobreeee???? dvojity for na tom istom???
-        for name2,set2 in dns_lookups.values():
-            if bool( set1.intersection(set2)) is True: #if intersection is non empty set
-                host_names_to_del.append(name1)
-                host_names_to_del.append(name2)
 
-    # here find hosts with name and append it to list conflict
-
+    # here add conflict hosts into conflicts
+    for host_list in ip_for_hosts.values():
+        if len(host_list) > 1:
+            conflict.extend(host_list)
+        else:
+            good.extend(host_list)
 
 def ping(host):
     """
     Returns True if host responds to a ping request
     """
     sys = platform.system().lower()
-    if sys == 'linux':
-        #sent only 1 packet and wait for response max 1 second
-        ping_cmd = '-c 1 -W 1 ' + host + ' >> /dev/null'
-    else:
+    if sys != 'linux':
         raise NotImplementedError
 
-    # Ping
-    return os.system('ping ' + ping_cmd) == 0
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    try:
+        # call ping with 1 packet, waiting 1second for response, with no output at all
+        subprocess.run(['ping', '-c 1', '-W 1', host], stdout=devnull, stderr=devnull, check=True)
+    except subprocess.CalledProcessError:
+        return False
+    else:
+        return True
+
+
