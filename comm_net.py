@@ -60,7 +60,7 @@ def ping(host):
 
     devnull = os.open(os.devnull, os.O_WRONLY)
     try:
-        # call ping with 1 packet, waiting 1second for response, with no output at all
+        # call ping with 1 packet, waiting 1 second if no response, with no output at all
         subprocess.run(['ping', '-c 1', '-W 1', host], stdout=devnull, stderr=devnull, check=True)
     except subprocess.CalledProcessError:
         return False
