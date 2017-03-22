@@ -3,7 +3,7 @@ from comm import Comm
 import subprocess
 
 def getCommType():
-    return {"file": ("CommFile", checkFiles, __name__)}
+    return {"file": (CommFile, checkFiles, __name__)}
 
 class CommFile(Comm):
     def __init__(self, host):

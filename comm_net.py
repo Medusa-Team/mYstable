@@ -7,7 +7,7 @@ import subprocess
 
 # TODO spravit z toho staticku metodu classy CommNet
 def getCommType():
-    return {"net": ("CommNet", checkNet, __name__)}
+    return {"net": (CommNet, checkNet, __name__)}
 
 class CommNet(Comm):
     def __init__(self, host):
