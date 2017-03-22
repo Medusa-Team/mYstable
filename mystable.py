@@ -2,6 +2,7 @@
 
 import threading
 import argparser
+import config_file_reader
 
 from mcp import doCommunicate
 
@@ -15,19 +16,28 @@ class constableThread(threading.Thread):
 def main():
 
         parser = argparser.Parser()
-        print(parser.config_file.name)
+        conf_reader = config_file_reader.ConfigFileReader(parser.config_file)
+        try:
+            conf_reader.read_and_check_args()
+        except Exception as err:
+            for arg in err.args:
+                print(arg)
+                return
 
-'''     threads = []
+
+        #make_client_instances here!!!
+"""
+        threads = []
 
         threads.append(constableThread(doCommunicate))
 
         for t in threads:
-                t.start()
+            t.start()
 
         for t in threads:
-                t.join()
+            t.join()
+"""
 
-'''
 if __name__ == "__main__":
         main()
 
