@@ -12,6 +12,7 @@ from importlib import import_module
 
 
 def getSupportedComms():
+
     comms = {}
     dirComms = '.'
     for dirName, subdirList, fileList in os.walk(dirComms):
@@ -36,6 +37,7 @@ def getSupportedComms():
 
     return comms
 
+
 class Comm:
 
         def __init__(self, host):
@@ -46,10 +48,13 @@ class Comm:
 
         def __enter__(self):
                 raise NotImplementedError
+
         def __exit__(self, *args):
                 raise NotImplementedError
+
         def read(self, size):
                 raise NotImplementedError
+        
         def write(self, what):
                 raise NotImplementedError
 

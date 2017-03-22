@@ -2,8 +2,7 @@ import json
 import os
 
 from comm import getSupportedComms
-from comm_net import check_net_IP_duplicities
-from comm_file import checkFiles
+
 
 class ConfigFileReader:
     """Class reading configuration settings from JSON file"""
@@ -12,24 +11,6 @@ class ConfigFileReader:
         self.config_file = config_file
         self.supportedCommTypes = getSupportedComms()
         self.hosts = []
-
-    def _check_host_config(self, host):
-        #nie je asi dobre zhadzovat celu meduzu ak je len jeden host zly.
-        #treba ho len odobrat a pokracovat v kontrole ostatnych nie?
-
-        commtype = host["host_commtype"]
-        if commtype not in self.supportedCommTypes:
-            raise NotImplementedError("host_commtype '" + commtype + "' is not supported")
-
-        confdir = host["host_confdir"]
-        if not os.path.isdir(confdir):
-            raise NotADirectoryError("Directory '"+ confdir +"' does not exists")
-
-        readable = os.access(confdir,os.R_OK) #check if conf directory is readable
-        if readable is False:
-            raise AttributeError("Directory '" + confdir + "' is not read accessible for Meduza.")
-
-
 
     def _check_hosts_names(self):
 
@@ -41,7 +22,6 @@ class ConfigFileReader:
         for values_to_del in hosts_to_del.values():
             if len(values_to_del) > 1:
                 self._delete_hosts(values_to_del)
-
 
     def _check_comm_types(self):
 

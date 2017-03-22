@@ -29,7 +29,7 @@ class CommNet(Comm):
 
 def checkNet(hosts, good, conflict, wrong):
 
-    loc_hosts = hosts[:] # make a copy
+    loc_hosts = hosts[:]  # make a copy
 
     for host in loc_hosts:
         remote_device = host['host_commdev']
@@ -45,18 +45,18 @@ def checkNet(hosts, good, conflict, wrong):
 def check_net_IP_duplicities(hosts, good, conflict, wrong):
 
     resolver = dns.resolver.Resolver()
-    resolver.timeout = 1 #1 seconds time out if no response to avoid long waiting
+    resolver.timeout = 1  # 1 seconds time out if no response to avoid long waiting
 
-    ip_for_hosts = dict() # mapping IP addres -> host
+    ip_for_hosts = dict()  # mapping IP address -> host
 
     for host in hosts:
-        name = host['host_name']
-        net_addres = host['host_commdev']
+
+        net_address = host['host_commdev']
 
         # store dns lookups for each host separately
         try:
-            answer = resolver.query(net_addres)
-        except Exception as err:
+            answer = resolver.query(net_address)
+        except dns.exception.DNSException:
             wrong.append(host)
         else:
             addr_set = set(rdata.address for rdata in answer)

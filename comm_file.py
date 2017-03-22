@@ -9,7 +9,6 @@ class CommFile(Comm):
     def __init__(self, host):
         super().__init__(host)
         self.fd = None
-        #self.fname = medFile
 
     def __enter__(self):
         self.fd = os.open(self.host_commdev, os.O_RDWR)
@@ -27,7 +26,7 @@ class CommFile(Comm):
 
 def checkFiles(hosts, good, conflict, wrong):
 
-    # good - no conflicts, file reachabe
+    # good - no conflicts, file reachable
     # conflict - files reachable, but files points to equal inode eg. hard links / sym links
     # wrong - not reachable files at all
 
