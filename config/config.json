@@ -2,15 +2,34 @@
 		"host_name": "Matus",
 		"host_confdir": "/home/juraj/Documents/Meduza",
 		"host_commtype": "NeT",
-		"host_commdev": "www.google.sk"
+		"host_commdev": "www.google.com"
 	}, {
 		"host_name": "Pavol",
 		"host_confdir": "/home/juraj/Documents/Meduza",
 		"host_commtype": "file",
-		"host_commdev": "/home/juraj/Documents/mYstable/config/config"
+		"host_commdev": "/home/juraj/Documents/doc"
 	}, {
 		"host_name": "Juraj",
 		"host_confdir": "/home/juraj/Documents/Meduza",
 		"host_commtype": "net",
-		"host_commdev": "216.58.206.4"
-	}]
+		"host_commdev": "www.ksj.sk"
+	},
+	{
+		"host_name": "Michal",
+		"host_confdir": "/home/juraj/Documents/Meduza",
+		"host_commtype": "file",
+		"host_commdev": "/home/juraj/Documents/ls_doc"
+	},
+	{
+		"host_name": "GoodJuraj",
+		"host_confdir": "/home/juraj/Documents/Meduza",
+		"host_commtype": "file",
+		"host_commdev": "/home/juraj/Documents/doc2"
+	},
+		{
+		"host_name": "GoodJuraj2",
+		"host_confdir": "/home/juraj/Documents/Meduza",
+		"host_commtype": "file",
+		"host_commdev": "/home/juraj/Documents/doc2"
+	}
+	]

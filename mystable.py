@@ -22,7 +22,11 @@ def main():
         except Exception as err:
             for arg in err.args:
                 print(arg)
-            return
+                return
+              
+        if len(conf_reader.hosts) == 0:
+            #TODO info message!!!
+            return           
 
         comms = []
         for host_config in conf_reader.hosts:
