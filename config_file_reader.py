@@ -81,7 +81,6 @@ class ConfigFileReader:
 
     def _check_hosts_devs(self):
 
-
         concats = dict()
         for host in self.hosts:
             host_concat = host['host_commtype'] + host["host_commdev"]

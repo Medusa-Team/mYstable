@@ -1,11 +1,31 @@
 import os
 import platform
+from comm import Comm
 import dns.resolver
 import subprocess
 
+
+# TODO spravit z toho staticku metodu classy CommNet
 def getCommType():
-#    print("getcommtype")
     return {"net": ("CommNet", checkNet, __name__)}
+
+class CommNet(Comm):
+    def __init__(self, host):
+        super().__init__(host)
+        # raise NotImplementedError
+
+    def __enter__(self):
+        raise NotImplementedError
+
+    def __exit__(self, *args):
+        raise NotImplementedError
+
+    def read(self, size):
+        raise NotImplementedError
+
+    def write(self, what):
+        raise NotImplementedError
+
 
 def checkNet(hosts, good, conflict, wrong):
 
@@ -28,6 +48,7 @@ def check_net_IP_duplicities(hosts, good, conflict, wrong):
     resolver.timeout = 1 #1 seconds time out if no response to avoid long waiting
 
     ip_for_hosts = dict() # mapping IP addres -> host
+
     for host in hosts:
         name = host['host_name']
         net_addres = host['host_commdev']
@@ -50,6 +71,7 @@ def check_net_IP_duplicities(hosts, good, conflict, wrong):
         else:
             good.extend(host_list)
 
+# TODO spravit z toho staticku metodu classy CommNet
 def ping(host):
     """
     Returns True if host responds to a ping request
@@ -66,5 +88,4 @@ def ping(host):
         return False
     else:
         return True
-
 

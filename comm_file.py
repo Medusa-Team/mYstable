@@ -1,10 +1,28 @@
 import os
+from comm import Comm
 import subprocess
 
-
 def getCommType():
-    #    print("getcommtype")
     return {"file": ("CommFile", checkFiles, __name__)}
+
+class CommFile(Comm):
+    def __init__(self, host):
+        super().__init__(host)
+        self.fd = None
+        #self.fname = medFile
+
+    def __enter__(self):
+        self.fd = os.open(self.host_commdev, os.O_RDWR)
+        return self
+
+    def __exit__(self, *args):
+        os.close(self.fd)
+
+    def read(self, size):
+        return os.read(self.fd, size)
+
+    def write(self, what):
+        return os.write(self.fd, what)
 
 
 def checkFiles(hosts, good, conflict, wrong):
@@ -42,3 +60,4 @@ def checkFiles(hosts, good, conflict, wrong):
         else:
             # inode is owned by unique file and is accessible for writing
             good.append(inode_hosts)
+
