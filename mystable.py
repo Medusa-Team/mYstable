@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import threading
+import argparser
+
 from mcp import doCommunicate
 
 class constableThread(threading.Thread):
@@ -11,8 +13,12 @@ class constableThread(threading.Thread):
                 self.fnc()
 
 def main():
-        threads = []
-        
+
+        parser = argparser.Parser()
+        print(parser.config_file.name)
+
+'''     threads = []
+
         threads.append(constableThread(doCommunicate))
 
         for t in threads:
@@ -21,7 +27,7 @@ def main():
         for t in threads:
                 t.join()
 
-
+'''
 if __name__ == "__main__":
         main()
 
