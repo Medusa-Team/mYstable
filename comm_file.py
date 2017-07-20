@@ -36,10 +36,6 @@ def checkFiles(hosts, good, conflict, wrong):
         # check if path is path to file,
         file = host['host_commdev']
 
-        if os.path.isfile(file) is False:
-            wrong.append(host)
-            continue
-
         writeable = os.access(file, os.W_OK)  # check if it is possible to write into file
         if writeable is False:
             wrong.append(host)
