@@ -12,12 +12,7 @@ from med_evtype import Evtype, readEvtypedef
 from helpers import printHex
 
 do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
-
 hosts = dict()
-'''
-kclasses = dict()       # kclasses obtained from medusa
-events = dict()         # events obtained from medusa
-'''
 DEBUG = 1
 
 # TODO: protokol zavisly od implementacie v jadre!!!
@@ -98,7 +93,7 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
             print_err(err)
 
         #print("DEBUG: request_id:", '{:08x}'.format(request_id))
-        acctype = events.get(acctype_id)
+        acctype = hosts[host.host_name]['events'].get(acctype_id)
         # TODO: MedusaCommError -> MedusaWhatEver
         if acctype == None:
                 raise(MedusaCommError("unknown ACCESS type"))
@@ -114,7 +109,7 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
         except OSError as err:
             print_err(err)
 
-        evtype = events.get(evid)
+        evtype = hosts[host.host_name]['events'].get(evid)
         # TODO: MedusaCommError -> MedusaWhatEver
         if evtype == None:
                 raise(MedusaCommError("unknown EVENT type "+hex(evid)+"in ACCESS "+acctype.name))
@@ -132,7 +127,7 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
                 print("DEBUG: access event '" + evtype.name + "'", event)
 
         # read ev0 kclass - subject type
-        subType = kclasses.get(acctype.subType)
+        subType = hosts[host.host_name]['kclasses'].get(acctype.subType)
         # TODO: MedusaCommError -> MedusaWhatEver
         if subType == None:
                 raise(MedusaCommError("unknown subject KCLASS type for: '"+acctype.subName+"'"))
@@ -147,7 +142,7 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
         # read ev1 kclass - object type
         obj = None
         if acctype.objType:
-                objType = kclasses.get(acctype.objType)
+                objType = hosts[host.host_name]['kclasses'].get(acctype.objType)
                 # TODO: MedusaCommError -> MedusaWhatEver
                 if objType == None:
                         raise(MedusaCommError("unknown object KCLASS type for: '"+acctype.objName+"'"))
@@ -204,12 +199,11 @@ kclassdef message format
 #MEDUSA_COMM_KCLASSDEF      = 0x02 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSDEF)
 def doMedusaCommKclassdef(host):
-        global kclasses
         kclass = readKclassdef(host, med_endian.ENDIAN)
         # TODO: raise 'kclass already defined'
         if kclass.kclassid in hosts[host.host_name]['kclasses']:
                 raise MedusaCommError
-        kclasses[kclass.kclassid] = kclass
+        hosts[host.host_name]['kclasses'][kclass.kclassid] = kclass
 
 #MEDUSA_COMM_KCLASSUNDEF    = 0x03 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSUNDEF)
@@ -229,12 +223,11 @@ evtypedef message format
 #MEDUSA_COMM_EVTYPEDEF      = 0x04 # k->c
 @registerCmd(MEDUSA_COMM_EVTYPEDEF)
 def doMedusaCommEvtypedef(host):
-        global events
         event = readEvtypedef(host, med_endian.ENDIAN)
         # TODO: raise 'event already defined'
-        if event.evid in events:
+        if event.evid in hosts[host.host_name]['events']:
                 raise MedusaCommError
-        events[event.evid] = event
+        hosts[host.host_name]['events'][event.evid] = event
 
 #MEDUSA_COMM_EVTYPEUNDEF    = 0x05 # k->c
 @registerCmd(MEDUSA_COMM_EVTYPEUNDEF)
@@ -331,8 +324,11 @@ def free_memory(comm):
 '''
 
 def doCommunicate(comm):
+        # create namespace for 'host_name'
         hosts[comm.host_name] = dict()
+        # kclasses obtained from medusa
         hosts[comm.host_name]['kclasses'] = dict()
+        # events obtained from medusa
         hosts[comm.host_name]['events'] = dict()
         with comm as host:
                 # read greeting and set byte order
