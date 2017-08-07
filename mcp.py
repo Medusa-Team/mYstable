@@ -10,7 +10,6 @@ import med_endian
 from med_kclass import Kclass, readKclassdef
 from med_evtype import Evtype, readEvtypedef
 from constants import *
-from decide import decide
 from helpers import printHex
 
 do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
@@ -129,7 +128,8 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
         print('------- AUTHREQUEST END -------')
 
     # TODO TODO TODO decide...
-    res = decide(event, sub, obj)
+    print(host)
+    res = host.decide(event, sub, obj)
 
     doMedusaCommAuthanswer(host, requests.pop(), res)
 
@@ -283,7 +283,7 @@ def doMedusaCommUnknown(host):
 
 def print_err(err):
     for arg in err.args:
-    print(arg)
+        print(arg)
 
 def free_memory(comm):
     del hosts[comm.host_name]['kclass']

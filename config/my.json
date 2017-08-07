@@ -1,7 +1,7 @@
 [
 	{
 		"host_name": "jano",
-		"host_confdir": "/home/jano/mYstable/",
+		"host_confdir": "config/example",
 		"host_commtype": "file",
 		"host_commdev": "/dev/medusa"
 	}

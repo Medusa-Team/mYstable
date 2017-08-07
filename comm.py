@@ -9,6 +9,7 @@ by the class CommFile.
 
 import os
 from importlib import import_module
+from constants import MED_OK, MED_NO
 
 
 def getSupportedComms():
@@ -46,6 +47,9 @@ class Comm:
             self.host_confdir = host['host_confdir']
             self.host_commtype = host['host_commtype']
             self.host_commdev = host['host_commdev']
+            self.hook_list = host['hook_register']
+            if self.hook_list is None:
+                self.hook_list = {}
 
         def __enter__(self):
                 raise NotImplementedError
@@ -58,4 +62,19 @@ class Comm:
         
         def write(self, what):
                 raise NotImplementedError
+
+        def decide(self, evtype, subj, obj):
+                for hook in self.hook_list.get(evtype.name, []):
+                        print(hook)
+                        try:
+                                res = hook['exec'](evtype, subj, obj)
+                                if res == MED_NO:
+                                        return res
+                        except:
+                                pass #todo error msg
+
+                return MED_OK
+
+        def __str__(self):
+                return '{host_name: %s, host_confdir: %s, host_commtype: %s, host_commdev: %s}' % (self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)
 
