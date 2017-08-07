@@ -31,6 +31,7 @@ class ConfigFileReader:
             host['host_commtype'] = host['host_commtype'].lower()
 
             if host['host_commtype'] not in self.supportedCommTypes:
+                print('%s host_commtype: %s is not supported' % (host['host_name'], host['host_commtype']))
                 hosts_to_del.append(host)
 
         self._delete_hosts(hosts_to_del)
@@ -41,11 +42,13 @@ class ConfigFileReader:
         for host in self.hosts:
             confdir = host["host_confdir"]
             if not os.path.isdir(confdir):
+                print('%s host_confdir: %s is not directory' % (host['host_name'], confdir))
                 hosts_to_del.append(host)
                 continue
 
             readable = os.access(confdir, os.R_OK)  # check if conf directory is readable
             if readable is not True:
+                print('%s host_confdir: %s is not readable' % (host['host_name'], confdir))
                 hosts_to_del.ppend(host)
 
         self._delete_hosts(hosts_to_del)

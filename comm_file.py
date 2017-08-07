@@ -39,6 +39,7 @@ def checkFiles(hosts, good, conflict, wrong):
         writeable = os.access(file, os.W_OK)  # check if it is possible to write into file
         if writeable is False:
             wrong.append(host)
+            print('%s %s is not writeable' % (host, file))
             continue
 
         # result of command is '<device_number_decimal>:<inode_number>'

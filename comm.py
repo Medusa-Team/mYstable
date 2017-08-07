@@ -31,9 +31,10 @@ def getSupportedComms():
                 fnameModule = import_module(fname[:-3], package=None)
             except ImportError as err:
                 for arg in err.args:
-                    print(arg)
+                    print('module %s error: %s' % (fname, arg))
             else:
                 comms.update(fnameModule.getCommType()) #add type of imported communication type
+            print(comms)
 
     return comms
 

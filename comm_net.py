@@ -37,6 +37,7 @@ def checkNet(hosts, good, conflict, wrong):
         result = ping(remote_device)
         if result is False:
             wrong.append(host)
+            print('%s %s can\'t ping host' % (host['host_name'], remote_device))
             loc_hosts.remove(host) # do not take hosts we cannot ping
 
     check_net_IP_duplicities(loc_hosts, good, conflict, wrong)
@@ -57,6 +58,7 @@ def check_net_IP_duplicities(hosts, good, conflict, wrong):
         try:
             answer = resolver.query(net_address)
         except dns.exception.DNSException:
+            print('%s %s can\'t open connection' % (host['host_name'], net_address))
             wrong.append(host)
         else:
             addr_set = set(rdata.address for rdata in answer)
@@ -76,14 +78,9 @@ def ping(host):
     """
     Returns True if host responds to a ping request
     """
-    sys = platform.system().lower()
-    if sys != 'linux':
-        raise NotImplementedError
-
-    devnull = os.open(os.devnull, os.O_WRONLY)
     try:
         # call ping with 1 packet, waiting 1 second if no response, with no output at all
-        subprocess.run(['ping', '-c 1', '-W 1', host], stdout=devnull, stderr=devnull, check=True)
+        subprocess.run(['ping', '-c 1', '-W 1', host], stdout=None, stderr=None, check=True)
     except subprocess.CalledProcessError:
         return False
     else:
