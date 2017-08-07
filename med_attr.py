@@ -20,59 +20,59 @@ MED_COMM_TYPE_MASK        = 0x3f # clear read-only and primary key bits
 
 class Attr:
     def __init__(self,name,atype,offset,length):
-            self.name = name
-            self.type = atype
-            self.offset = offset
-            self.length = length
-            self.typeStr = ''               # for printing
-            self.pythonType = ''            # for struct (un)packing
-            self.afterUnpack = None         # if needed some tranformation after unpacking (i.e. for strings)
-            self.beforePack = None          # if needed some transformation before packing (i. e. for strings)
-            self.isReadonly = False
-            self.isPrimary = False
-            self.val = None
+        self.name = name
+        self.type = atype
+        self.offset = offset
+        self.length = length
+        self.typeStr = ''               # for printing
+        self.pythonType = ''            # for struct (un)packing
+        self.afterUnpack = None         # if needed some tranformation after unpacking (i.e. for strings)
+        self.beforePack = None          # if needed some transformation before packing (i. e. for strings)
+        self.isReadonly = False
+        self.isPrimary = False
+        self.val = None
 
     def __str__(self):
-            s = self.name + ' = '
-            # val type is SIGNED or UNSIGNED
-            if type(self.val) == type(int()):
-                ss = '{:0'+str(self.length)+'x}'
-                s += ss.format(self.val)
-            # val type is STRING
-            elif type(self.val) == type(str()):
-                s += self.val
-            # val type is BITMAP
-            elif type(self.val) == type(bytes()):
-                if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
-                    beg = 0
-                    end = len(self.val)
-                    step = 1
-                elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
-                    beg = len(self.val)-1
-                    end = -1
-                    step = -1
-                else:
-                    raise(VALUE_ERROR)
-                four = 0
-                for i in range(beg,end,step):
-                    if four == 4:
-                        s += ':'
-                        four = 0
-                    s += '{:02x}'.format(self.val[i])
-                    four += 1
-            elif type(self.val) == type(list()):
-                # val type is array of STRING
-                if self.type & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
-                    s += str(self.val)
-                # val type is array of SIGNED or UNSIGNED
-                else:
-                    for i in range(0,len(self.val)):
-                        s += '{:016x}'.format(self.val[i])
-                        if i < len(self.val) - 1:
-                            s += ':'
+        s = self.name + ' = '
+        # val type is SIGNED or UNSIGNED
+        if type(self.val) == type(int()):
+            ss = '{:0'+str(self.length)+'x}'
+            s += ss.format(self.val)
+        # val type is STRING
+        elif type(self.val) == type(str()):
+            s += self.val
+        # val type is BITMAP
+        elif type(self.val) == type(bytes()):
+            if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
+                beg = 0
+                end = len(self.val)
+                step = 1
+            elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
+                beg = len(self.val)-1
+                end = -1
+                step = -1
             else:
-                s += 'UNKNOWN ' + str(type(self.val))
-            return s
+                raise(VALUE_ERROR)
+            four = 0
+            for i in range(beg,end,step):
+                if four == 4:
+                    s += ':'
+                    four = 0
+                s += '{:02x}'.format(self.val[i])
+                four += 1
+        elif type(self.val) == type(list()):
+            # val type is array of STRING
+            if self.type & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
+                s += str(self.val)
+            # val type is array of SIGNED or UNSIGNED
+            else:
+                for i in range(0,len(self.val)):
+                    s += '{:016x}'.format(self.val[i])
+                    if i < len(self.val) - 1:
+                        s += ':'
+        else:
+            s += 'UNKNOWN ' + str(type(self.val))
+        return s
 
 ''' medusa attribute definition in 'include/linux/medusa/l4/comm.h'
     struct medusa_comm_attribute_s {
@@ -135,24 +135,26 @@ class AttrInit:
             for 'UPDATE' medusa command
     '''
     def __init__(self, buf):
-            for a in sorted(self.attr):
-                attr = self.attr[a]
-                offset = attr.offset
-                length = attr.length
-                data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
+        for a in sorted(self.attr):
+            attr = self.attr[a]
+            offset = attr.offset
+            length = attr.length
+            data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
+            if len(data) == 1:
+                data = data[0]
+            if attr.afterUnpack:
+                # data can be an array (i.e. strings)
+                data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
                 if len(data) == 1:
                     data = data[0]
-                if attr.afterUnpack:
-                    # data can be an array (i.e. strings)
-                    data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
-                    if len(data) == 1:
-                        data = data[0]
-                self.attr[a].val = data
+            self.attr[a].val = data
+
     def __str__(self):
-            s = str(self.__class__) + ' = {'
-            for a in sorted(self.attr):
-                s += '\n\t' + str(self.attr[a])
-            if self.attr:
-                s += '\n'
-            s += '}'
-            return str(s)
+        s = str(self.__class__) + ' = {'
+        for a in sorted(self.attr):
+            s += '\n\t' + str(self.attr[a])
+        if self.attr:
+            s += '\n'
+        s += '}'
+
+        return str(s)

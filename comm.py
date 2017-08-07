@@ -42,39 +42,38 @@ def getSupportedComms():
 
 class Comm:
 
-        def __init__(self, host):
-            self.host_name = host['host_name']
-            self.host_confdir = host['host_confdir']
-            self.host_commtype = host['host_commtype']
-            self.host_commdev = host['host_commdev']
-            self.hook_list = host['hook_register']
-            if self.hook_list is None:
-                self.hook_list = {}
+    def __init__(self, host):
+        self.host_name = host['host_name']
+        self.host_confdir = host['host_confdir']
+        self.host_commtype = host['host_commtype']
+        self.host_commdev = host['host_commdev']
+        self.hook_list = host['hook_register']
+        if self.hook_list is None:
+            self.hook_list = {}
 
-        def __enter__(self):
-                raise NotImplementedError
+    def __enter__(self):
+        raise NotImplementedError
 
-        def __exit__(self, *args):
-                raise NotImplementedError
+    def __exit__(self, *args):
+        raise NotImplementedError
 
-        def read(self, size):
-                raise NotImplementedError
+    def read(self, size):
+        raise NotImplementedError
         
-        def write(self, what):
-                raise NotImplementedError
+    def write(self, what):
+        raise NotImplementedError
 
-        def decide(self, evtype, subj, obj):
-                for hook in self.hook_list.get(evtype.name, []):
-                        print(hook)
-                        try:
-                                res = hook['exec'](evtype, subj, obj)
-                                if res == MED_NO:
-                                        return res
-                        except:
-                                pass #todo error msg
+    def decide(self, evtype, subj, obj):
+        for hook in self.hook_list.get(evtype.name, []):
+            try:
+                res = hook['exec'](evtype, subj, obj)
+                if res == MED_NO:
+                    return res
+            except:
+                pass #todo error msg
 
-                return MED_OK
+        return MED_OK
 
-        def __str__(self):
-                return '{host_name: %s, host_confdir: %s, host_commtype: %s, host_commdev: %s}' % (self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)
+    def __str__(self):
+        return '{host_name: %s, host_confdir: %s, host_commtype: %s, host_commdev: %s}' % (self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)
 
