@@ -323,7 +323,7 @@ def doCommunicate(comm):
         end_lit = b"\x5a\x7e\x00\x66\x00\x00\x00\x00"
         end_big = b"\x00\x00\x00\x00\x66\x00\x7e\x5a"
         if greeting == end_big:
-            med_endian.ENDIAN = med_endian.BIG_ENDIAN 
+            med_endian.ENDIAN = med_endian.BIG_ENDIAN
             print("from medusa detected BIG ENDIAN byte order\n")
         elif greeting == end_lit:
             med_endian.ENDIAN = med_endian.LITTLE_ENDIAN

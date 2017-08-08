@@ -1,21 +1,12 @@
 from constants import MED_OK, MED_NO
 from mcp import getclass
+from framework import Register
 import random
-
-conf = {}
 
 def gc(name):
     return getclass(hostname, name)
 
-def register(evname, **kwargs):
-    def register_decorator(func):
-        hooks = conf.setdefault(evname, [])
-        hooks.append({'exec': func, 
-                      'evtype': kwargs.get('evtype'),
-                      'object': kwargs.get('object'),
-                      'subject': kwargs.get('subject')})
-        return func
-    return register_decorator
+register = Register()
 
 @register('getprocess')
 def getprocess(evtype, parent):

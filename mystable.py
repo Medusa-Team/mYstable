@@ -5,9 +5,8 @@ import argparser
 import config_file_reader
 
 from mcp import doCommunicate
-from decide import Conf
 
-class constableThread(threading.Thread):
+class ConstableThread(threading.Thread):
     def __init__(self, fnc):
         threading.Thread.__init__(self)
         self.fnc = fnc
@@ -25,10 +24,10 @@ def main():
         for arg in err.args:
             print(arg)
             return
-          
+
     if len(conf_reader.hosts) == 0:
         #TODO info message!!!
-        return           
+        return
 
     threads = []
     for host_config in conf_reader.hosts:
@@ -37,7 +36,7 @@ def main():
         # create instance of apropriate 'comm' with apripriate config
         comm = comm_constructor(host_config)
 
-        threads.append(constableThread(doCommunicate(comm)))
+        threads.append(ConstableThread(doCommunicate(comm)))
 
     for t in threads:
         t.start()
@@ -47,4 +46,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

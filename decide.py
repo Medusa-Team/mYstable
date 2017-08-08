@@ -1,28 +1,27 @@
 from constants import MED_OK, MED_NO
 from importlib import import_module
 
-class Conf():
-    confs = {}
+class Rules():
+    rules = {}
     def load(host):
         conf_dir = host['host_confdir']
-        if conf_dir in Conf.confs:
-            return Conf.confs[conf_dir]
-        conf = Conf(host)
-        Conf.confs[conf_dir] = conf
+        if conf_dir in Rules.rules:
+            return Rules.rules[conf_dir]
+        rules = Rules(host)
+        Rules.rules[conf_dir] = rules
 
-        return conf
-        
-    def __init__(self, host): 
+        return rules
+
+    def __init__(self, host):
         conf_dir = host['host_confdir']
 
-        configuration = None
+        rules = None
         try:
-            conf = import_module(conf_dir.replace('/', '.'), package=None)
-            #conf.__dict__['__name__'] = host['host_name']
-            conf.__dict__['hostname'] = host['host_name']
-            configuration = conf.conf
+            rules_module = import_module(conf_dir.replace('/', '.'), package=None)
+            rules_module.__dict__['hostname'] = host['host_name']
+            rules = rules_module.register.hooks
         except ImportError as err:
             for arg in err.args:
                 print('Cannot import hooks from %s: %s' % (conf_dir, arg))
-        self.conf = configuration
+        self.rules = rules
 

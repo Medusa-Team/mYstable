@@ -10,6 +10,7 @@ by the class CommFile.
 import os
 from importlib import import_module
 from constants import MED_OK, MED_NO
+from framework import exec
 
 
 def getSupportedComms():
@@ -59,7 +60,7 @@ class Comm:
 
     def read(self, size):
         raise NotImplementedError
-        
+
     def write(self, what):
         raise NotImplementedError
 
@@ -70,11 +71,7 @@ class Comm:
             if callable(check):
                 return check(kobject)
             for key in check:
-                if callable(check[key]):
-                    if not check[key](kobject[key]):
-                        return False
-                    continue
-                if check[key] != kobject[key]:
+                if not exec(check[key], kobject[key]):
                     return False
             return True
         for hook in self.hook_list.get(evtype.name, []):

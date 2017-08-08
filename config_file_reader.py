@@ -2,7 +2,7 @@ import json
 import os
 
 from comm import getSupportedComms
-from decide import Conf
+from decide import Rules
 
 
 class ConfigFileReader:
@@ -52,8 +52,8 @@ class ConfigFileReader:
                 print('%s host_confdir: %s is not readable' % (host['host_name'], confdir))
                 hosts_to_del.ppend(host)
             else:
-                conf = Conf.load(host)
-                host['hook_register'] = conf.conf
+                rules = Rules.load(host)
+                host['hook_register'] = rules.rules
 
         self._delete_hosts(hosts_to_del)
 
