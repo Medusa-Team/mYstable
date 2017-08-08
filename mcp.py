@@ -6,7 +6,6 @@ import struct
 
 
 import med_endian
-#from med_attr import Attr, readAttribute, MEDUSA_COMM_ATTRNAME_MAX
 from med_kclass import Kclass, readKclassdef
 from med_evtype import Evtype, readEvtypedef
 from constants import *
@@ -17,7 +16,10 @@ hosts = dict()
 DEBUG = 1
 
 def getclass(hostname, name):
-    return hosts[hostname]['kclassesByName'].get(name)
+    cl = hosts[hostname]['kclassesByName'].get(name)
+    if cl:
+        return cl(None)
+    return None
 
 # decorator
 def registerCmd(cmd):

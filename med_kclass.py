@@ -7,11 +7,14 @@ class Kclass(AttrInit):
     TODO:   create object factory for this purpose, because we need empty initializer
         for 'UPDATE' medusa command
     '''
-    def __init__(self, buf):
+    def __init__(self, buf=None):
+        self.attr = dict()
         AttrInit.__init__(self, buf)
+
     def fetch(self):
         # TODO TODO TODO
         raise NotImplementedError
+
     def update(self):
         # TODO TODO TODO
         raise NotImplementedError
@@ -49,7 +52,7 @@ def readKclassdef(medusa, ENDIAN = "="):
     kclass.kclassid = kclassid
     kclass.size = csize
     kclass.name = cname
-    kclass.attr = dict()
+    kclass.attrDef = dict()
 
     # read attributes
     attrMaxOffset = -1
@@ -59,7 +62,7 @@ def readKclassdef(medusa, ENDIAN = "="):
         attr = readAttribute(medusa, ENDIAN)
         if attr == None:
             break;
-        kclass.attr[attr.name] = attr
+        kclass.attrDef[attr.name] = attr
         attrCnt += 1
         if attr.offset > attrMaxOffset:
             csizeReal = attr.offset + attr.length

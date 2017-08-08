@@ -19,18 +19,8 @@ MED_COMM_TYPE_PRIMARY_KEY = 0x40 # this attribute is used to lookup object
 MED_COMM_TYPE_MASK        = 0x3f # clear read-only and primary key bits
 
 class Attr:
-    def __init__(self,name,atype,offset,length):
-        self.name = name
-        self.type = atype
-        self.offset = offset
-        self.length = length
-        self.typeStr = ''               # for printing
-        self.pythonType = ''            # for struct (un)packing
-        self.afterUnpack = None         # if needed some tranformation after unpacking (i.e. for strings)
-        self.beforePack = None          # if needed some transformation before packing (i. e. for strings)
-        self.isReadonly = False
-        self.isPrimary = False
-        self.val = None
+    def __init__(self,val=None):
+        self.val = val
 
     def __str__(self):
         s = self.name + ' = '
@@ -70,6 +60,8 @@ class Attr:
                     s += '{:016x}'.format(self.val[i])
                     if i < len(self.val) - 1:
                         s += ':'
+        elif type(self.val) == type(None):
+            s += 'Not defined yet'
         else:
             s += 'UNKNOWN ' + str(type(self.val))
         return s
@@ -85,6 +77,9 @@ class Attr:
 MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
 def readAttribute(medusa, endian = "="):
+    def __init__(self, val):
+        Attr.__init__(self, val)
+
     medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
     aoffset,alength,atype,aname = \
             struct.unpack(medusa_comm_attribute_s[0], \
@@ -95,7 +90,19 @@ def readAttribute(medusa, endian = "="):
     # decode name in ascii coding
     aname = aname.decode('ascii').split('\x00',1)[0]
     # create Attr object
-    attr = Attr(aname, atype, aoffset, alength)
+    #attr = Attr(aname, atype, aoffset, alength)
+    attr = type(aname, (Attr,),dict(__init__ = __init__))
+    attr.name = aname
+    attr.type = atype
+    attr.offset = aoffset
+    attr.length = alength
+
+    attr.isReadonly = False
+    attr.isPrimary = False
+    attr.typeStr = ''         # for printing
+    attr.pythonType = ''      # for struct (un)packing
+    attr.afterUnpack = None   # if needed some tranformation after unpacking (i.e. for strings)
+    attr.beforePack = None    # if needed some transformation before packing (i. e. for strings)
 
     # parse attr type and fill other Attr attributes
     atypeStr = ''
@@ -134,20 +141,22 @@ class AttrInit:
     TODO:   create object factory for this purpose, because we need empty initializer
             for 'UPDATE' medusa command
     '''
-    def __init__(self, buf):
-        for a in sorted(self.attr):
-            attr = self.attr[a]
+    def __init__(self, buf=None):
+        for a in sorted(self.attrDef):
+            attr = self.attrDef[a]
             offset = attr.offset
             length = attr.length
-            data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
-            if len(data) == 1:
+            data = None
+            if buf != None:
+                data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
+            if data and len(data) == 1:
                 data = data[0]
-            if attr.afterUnpack:
+            if data and attr.afterUnpack:
                 # data can be an array (i.e. strings)
                 data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
                 if len(data) == 1:
                     data = data[0]
-            self.attr[a].val = data
+            self.attr[a] = attr(data)
 
     def __str__(self):
         s = str(self.__class__) + ' = {'

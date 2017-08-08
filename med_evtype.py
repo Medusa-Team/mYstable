@@ -8,7 +8,8 @@ class Evtype(AttrInit):
     TODO:   create object factory for this purpose, because we need empty initializer
         for 'UPDATE' medusa command
     '''
-    def __init__(self, buf):
+    def __init__(self, buf=None):
+        self.attr = dict()
         AttrInit.__init__(self, buf)
 
 # TODO TODO TODO: fix documentation in 'include/linux/medusa/l4/comm.h'
@@ -90,7 +91,7 @@ def readEvtypedef(medusa, ENDIAN = "="):
     event.subName = ev_name0
     event.objType = ev_kclass1
     event.objName = ev_name1
-    event.attr = dict()
+    event.attrDef = dict()
 
     # read attributes
     attrMaxOffset = -1
@@ -100,7 +101,7 @@ def readEvtypedef(medusa, ENDIAN = "="):
         attr = readAttribute(medusa, ENDIAN)
         if attr == None:
             break;
-        event.attr[attr.name] = attr
+        event.attrDef[attr.name] = attr
         attrCnt += 1
         if attr.offset > attrMaxOffset:
             sizeReal = attr.offset + attr.length
