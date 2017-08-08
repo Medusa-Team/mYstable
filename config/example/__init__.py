@@ -1,6 +1,11 @@
 from constants import MED_OK, MED_NO
+from mcp import getclass
 import random
+
 conf = {}
+
+def gc(name):
+    return getclass(hostname, name)
 
 def register(evname):
     def register_decorator(func):
@@ -10,10 +15,20 @@ def register(evname):
     return register_decorator
 
 @register('getprocess')
-def aka(evtype, subj, obj):
+def getprocess(evtype, parent, none):
+    print("//////////****")
+    tmp = gc('fuck')
+    print(tmp)
+    print("****//////////")
+    #print(evtype)
+    #print(parent)
+    return MED_OK
+
+@register('getfile')
+def getfile(evtype, new_file, parent):
     print(evtype)
-    print(subj)
-    print(obj)
+    print(new_file)
+    print(parent)
     return MED_OK
 
 @register('kill')
@@ -22,6 +37,6 @@ def kill(etype, subj, obj):
 
 @register('fork')
 def fork(evtype, subj, obj):
-    if random.random() < 0.2:
-        return MED_NO
+    #if random.random() < 0.2:
+    #    return MED_NO
     return MED_YES

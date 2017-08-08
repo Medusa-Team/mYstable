@@ -18,6 +18,8 @@ class Conf():
         configuration = None
         try:
             conf = import_module(conf_dir.replace('/', '.'), package=None)
+            #conf.__dict__['__name__'] = host['host_name']
+            conf.__dict__['hostname'] = host['host_name']
             configuration = conf.conf
         except ImportError as err:
             for arg in err.args:

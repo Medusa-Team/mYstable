@@ -16,6 +16,9 @@ do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
 hosts = dict()
 DEBUG = 1
 
+def getclass(hostname, name):
+    return hosts[hostname]['kclassesByName'].get(name)
+
 # decorator
 def registerCmd(cmd):
     def decorator(fnc):
@@ -54,7 +57,7 @@ authrequest message format:
 requests = []
 @registerCmd(MEDUSA_COMM_AUTHREQUEST)
 def doMedusaCommAuthrequest(host, acctype_id = None):
-    if DEBUG:
+    if DEBUG > 1:
         print('------- AUTHREQUEST BEG -------')
     # remember that acctype_id is just readed
     try:
@@ -69,10 +72,11 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
         raise(MedusaCommError("unknown ACCESS type"))
     requests.append(request_id)
 
-    print("[0x%08X] %s: %s" % (request_id, acctype.name, acctype.subName), end='')
-    if acctype.objName:
-        print(", %s" % acctype.objName, end='')
-    print()
+    if DEBUG > 1:
+        print("[0x%08X] %s: %s" % (request_id, acctype.name, acctype.subName), end='')
+        if acctype.objName:
+            print(", %s" % acctype.objName, end='')
+        print()
 
     try:
         evid = struct.unpack(med_endian.ENDIAN+"Q", host.read(8))[0]
@@ -93,7 +97,7 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
             print_err(err)
 
     event = evtype(evbuf)
-    if DEBUG:
+    if DEBUG > 1:
         print("DEBUG: access event '" + evtype.name + "'", event)
 
     # read ev0 kclass - subject type
@@ -106,7 +110,7 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
     except OSError as err:
         print_err(err)
 
-    if DEBUG:
+    if DEBUG > 1:
         print("DEBUG: subject '" + acctype.subName + "' of", sub)
 
     # read ev1 kclass - object type
@@ -121,14 +125,15 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
         except OSError as err:
             print_err(err)
 
-        if DEBUG:
+        if DEBUG > 1:
             print("DEBUG: object '" + acctype.objName + "' of", obj)
 
-    if DEBUG:
+    if DEBUG > 1:
         print('------- AUTHREQUEST END -------')
 
     # TODO TODO TODO decide...
-    print(host)
+    if DEBUG:
+        print(host)
     res = host.decide(event, sub, obj)
 
     doMedusaCommAuthanswer(host, requests.pop(), res)
@@ -175,6 +180,7 @@ def doMedusaCommKclassdef(host):
     if kclass.kclassid in hosts[host.host_name]['kclasses']:
         raise MedusaCommError
     hosts[host.host_name]['kclasses'][kclass.kclassid] = kclass
+    hosts[host.host_name]['kclassesByName'][kclass.name] = kclass
 
 #MEDUSA_COMM_KCLASSUNDEF    = 0x03 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSUNDEF)
@@ -299,6 +305,7 @@ def doCommunicate(comm):
     hosts[comm.host_name] = dict()
     # kclasses obtained from medusa
     hosts[comm.host_name]['kclasses'] = dict()
+    hosts[comm.host_name]['kclassesByName'] = dict()
     # events obtained from medusa
     hosts[comm.host_name]['events'] = dict()
     with comm as host:
