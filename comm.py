@@ -64,15 +64,46 @@ class Comm:
         raise NotImplementedError
 
     def decide(self, evtype, subj, obj):
+        def _doCheck(check, kobject):
+            if check is None:
+                return True
+            if callable(check):
+                return check(kobject)
+            print('not callable')
+            for key in check:
+                if callable(check[key]):
+                    if not check[key](kobject[key]):
+                        return False
+                    continue
+                if check[key] != kobject[key]:
+                    return False
+            return True
         for hook in self.hook_list.get(evtype.name, []):
             try:
-                res = hook['exec'](evtype, subj, obj)
+                if not _doCheck(hook['evtype'], evtype): continue
+                if not _doCheck(hook['object'], obj): continue
+                if not _doCheck(hook['subject'], subj): continue
+                if obj is None:
+                    res = hook['exec'](evtype, subj)
+                else:
+                    res = hook['exec'](evtype, subj, obj)
                 if res == MED_NO:
                     return res
-            except:
+            except Exception as err:
+                import traceback, sys
+                traceback.print_exc(file=sys.stdout)
+                for arg in err.args:
+                    print("error in hook: %s" % arg)
                 pass #todo error msg
 
         return MED_OK
+
+    def init(self):
+        for hook in self.hook_list.get('init', []):
+            try:
+                hook['exec']()
+            except:
+                pass
 
     def __str__(self):
         return '{host_name: %s, host_confdir: %s, host_commtype: %s, host_commdev: %s}' % (self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)

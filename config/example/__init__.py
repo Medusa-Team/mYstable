@@ -7,15 +7,18 @@ conf = {}
 def gc(name):
     return getclass(hostname, name)
 
-def register(evname):
+def register(evname, **kwargs):
     def register_decorator(func):
         hooks = conf.setdefault(evname, [])
-        hooks.append({'exec': func})
+        hooks.append({'exec': func, 
+                      'evtype': kwargs.get('evtype'),
+                      'object': kwargs.get('object'),
+                      'subject': kwargs.get('subject')})
         return func
     return register_decorator
 
 @register('getprocess')
-def getprocess(evtype, parent, none):
+def getprocess(evtype, parent):
     print("//////////****")
     tmp = gc('fuck')
     print(tmp)
@@ -24,11 +27,27 @@ def getprocess(evtype, parent, none):
     #print(parent)
     return MED_OK
 
-@register('getfile')
+@register('getfile', evtype={'filename': '/'})
 def getfile(evtype, new_file, parent):
+    print('som root vyfiltrovany cez dictionary')
     print(evtype)
-    print(new_file)
-    print(parent)
+    return MED_OK
+
+@register('getfile', evtype={'filename': lambda x: x == '/'})
+def getfile(evtype, new_file, parent):
+    print('som root vyfiltrovany cez lambdu v dictionary')
+    print(evtype)
+    return MED_OK
+
+@register('getfile', evtype=lambda e: e['filename'] == '/')
+def getfile(evtype, new_file, parent):
+    print('som root vyfiltrovany cez lambdu')
+    print(evtype)
+    return MED_OK
+
+@register('getfile')
+def getfile2(evtype, new_file, parent):
+    print(evtype)
     return MED_OK
 
 @register('kill')
@@ -36,7 +55,7 @@ def kill(etype, subj, obj):
     return MED_NO
 
 @register('fork')
-def fork(evtype, subj, obj):
+def fork(evtype, subj):
     #if random.random() < 0.2:
     #    return MED_NO
-    return MED_YES
+    return MED_OK

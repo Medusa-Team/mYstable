@@ -332,6 +332,8 @@ def doCommunicate(comm):
             print("from medusa detected UNSUPPORTED byte order")
             return(-1)
 
+        host.init()
+
         while True:
             # read next chunk of data to do
             try:
