@@ -69,7 +69,6 @@ class Comm:
                 return True
             if callable(check):
                 return check(kobject)
-            print('not callable')
             for key in check:
                 if callable(check[key]):
                     if not check[key](kobject[key]):
