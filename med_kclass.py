@@ -1,5 +1,6 @@
 import struct
 from med_attr import Attr, AttrInit, readAttribute, MEDUSA_COMM_ATTRNAME_MAX
+import mcp
 
 class Kclass(AttrInit):
     ''' 
@@ -12,12 +13,10 @@ class Kclass(AttrInit):
         AttrInit.__init__(self, buf)
 
     def fetch(self):
-        # TODO TODO TODO
-        raise NotImplementedError
+        mcp.doMedusaCommFetchRequest(medusa, self)
 
     def update(self):
-        # TODO TODO TODO
-        raise NotImplementedError
+        mcp.doMedusaCommUpdateRequest(medusa, self)
 
 ''' medusa class definition in 'include/linux/medusa/l4/comm.h'
     struct medusa_comm_kclass_s {
@@ -52,6 +51,7 @@ def readKclassdef(medusa, ENDIAN = "="):
     kclass.kclassid = kclassid
     kclass.size = csize
     kclass.name = cname
+    kclass.medusa = medusa
     kclass.attrDef = dict()
 
     # read attributes

@@ -6,7 +6,7 @@ import struct
 
 
 import med_endian
-from med_kclass import Kclass, readKclassdef
+import med_kclass
 from med_evtype import Evtype, readEvtypedef
 from constants import *
 from helpers import printHex
@@ -171,7 +171,7 @@ kclassdef message format
 #MEDUSA_COMM_KCLASSDEF      = 0x02 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSDEF)
 def doMedusaCommKclassdef(host):
-    kclass = readKclassdef(host, med_endian.ENDIAN)
+    kclass = med_kclass.readKclassdef(host, med_endian.ENDIAN)
     # TODO: raise 'kclass already defined'
     if kclass.kclassid in hosts[host.host_name]['kclasses']:
         raise MedusaCommError
@@ -261,7 +261,7 @@ update_request message format
 '''
 #MEDUSA_COMM_UPDATE_REQUEST = 0x8a # c->k
 @registerCmd(MEDUSA_COMM_UPDATE_REQUEST)
-def doMedusaCommUpdateRequest(host):
+def doMedusaCommUpdateRequest(host, obj = None):
     print("TODO: doMedusaCommUpdateRequest")
     raise(NotImplementedError)
 
