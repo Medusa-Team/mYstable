@@ -68,12 +68,8 @@ class Comm:
         def _doCheck(check, kobject):
             if check is None:
                 return True
-            if callable(check):
-                return check(kobject)
-            for key in check:
-                if not exec(check[key], kobject[key]):
-                    return False
-            return True
+            return exec(check, kobject)
+
         for hook in self.hook_list.get(evtype.name, []):
             try:
                 if not _doCheck(hook['evtype'], evtype): continue
@@ -102,5 +98,5 @@ class Comm:
                 pass
 
     def __str__(self):
-        return '{host_name: %s, host_confdir: %s, host_commtype: %s, host_commdev: %s}' % (self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)
+        return '%s = {\n        host_name = %s\n        host_confdir = %s\n        host_commtype = %s\n        host_commdev = %s\n}' % (type(self), self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)
 
