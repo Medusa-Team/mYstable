@@ -15,12 +15,6 @@ do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
 hosts = dict()
 DEBUG = 1
 
-def getclass(hostname, name):
-    cl = hosts[hostname]['kclassesByName'].get(name)
-    if cl:
-        return cl(None)
-    return None
-
 # decorator
 def registerCmd(cmd):
     def decorator(fnc):
@@ -183,6 +177,8 @@ def doMedusaCommKclassdef(host):
         raise MedusaCommError
     hosts[host.host_name]['kclasses'][kclass.kclassid] = kclass
     hosts[host.host_name]['kclassesByName'][kclass.name] = kclass
+    #register object
+    host.hook_module.__dict__[kclass.name.title()] = kclass
 
 #MEDUSA_COMM_KCLASSUNDEF    = 0x03 # k->c
 @registerCmd(MEDUSA_COMM_KCLASSUNDEF)
@@ -332,7 +328,7 @@ def doCommunicate(comm):
             print("from medusa detected UNSUPPORTED byte order")
             return(-1)
 
-        host.init()
+        init_executed = False
 
         while True:
             # read next chunk of data to do
@@ -355,5 +351,8 @@ def doCommunicate(comm):
                 cmd = struct.unpack(med_endian.ENDIAN+"I",cmd)[0]
                 do_cmd.get(cmd, doMedusaCommUnknown)(host)
             else:
+                if not init_executed:
+                    init_executed = True
+                    host.init()
                 doMedusaCommAuthrequest(host, id)
 

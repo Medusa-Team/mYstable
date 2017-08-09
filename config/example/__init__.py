@@ -1,17 +1,13 @@
 from constants import MED_OK, MED_NO
-from mcp import getclass
 from framework import Register
 import random
-
-def gc(name):
-    return getclass(hostname, name)
 
 register = Register()
 
 @register('getprocess')
 def getprocess(evtype, parent):
     print("//////////****")
-    tmp = gc('fuck')
+    tmp = Fuck()
     print(tmp)
     print("****//////////")
     #print(evtype)

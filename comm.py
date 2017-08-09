@@ -36,7 +36,6 @@ def getSupportedComms():
                     print('module %s error: %s' % (fname, arg))
             else:
                 comms.update(fnameModule.getCommType()) #add type of imported communication type
-            print(comms)
 
     return comms
 
@@ -48,7 +47,8 @@ class Comm:
         self.host_confdir = host['host_confdir']
         self.host_commtype = host['host_commtype']
         self.host_commdev = host['host_commdev']
-        self.hook_list = host['hook_register']
+        self.hook_module = host['hook_module']
+        self.hook_list = self.hook_module.register.hooks
         if self.hook_list is None:
             self.hook_list = {}
 

@@ -39,7 +39,7 @@ kclassdef message format
 '''
 def readKclassdef(medusa, ENDIAN = "="):
     medusa_comm_kclass_s = (ENDIAN+"QH"+str(MEDUSA_COMM_KCLASSNAME_MAX)+"s", 8+2+MEDUSA_COMM_KCLASSNAME_MAX)
-    def __init__(self, buf):
+    def __init__(self, buf = None):
         Kclass.__init__(self, buf)
 
     kclassid, csize, cname = \

@@ -53,7 +53,7 @@ class ConfigFileReader:
                 hosts_to_del.ppend(host)
             else:
                 rules = Rules.load(host)
-                host['hook_register'] = rules.rules
+                host['hook_module'] = rules.module
 
         self._delete_hosts(hosts_to_del)
 

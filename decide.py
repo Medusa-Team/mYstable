@@ -15,13 +15,10 @@ class Rules():
     def __init__(self, host):
         conf_dir = host['host_confdir']
 
-        rules = None
+        self.module = None
         try:
-            rules_module = import_module(conf_dir.replace('/', '.'), package=None)
-            rules_module.__dict__['hostname'] = host['host_name']
-            rules = rules_module.register.hooks
+            self.module = import_module(conf_dir.replace('/', '.'), package=None)
         except ImportError as err:
             for arg in err.args:
                 print('Cannot import hooks from %s: %s' % (conf_dir, arg))
-        self.rules = rules
 
