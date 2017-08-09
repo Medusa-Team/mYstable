@@ -18,7 +18,7 @@ MED_COMM_TYPE_READ_ONLY   = 0x80 # this attribute is read-only
 MED_COMM_TYPE_PRIMARY_KEY = 0x40 # this attribute is used to lookup object
 MED_COMM_TYPE_MASK        = 0x3f # clear read-only and primary key bits
 
-class Attr:
+class Attr(object):
     def __init__(self,val=None):
         self.val = val
 
@@ -76,8 +76,8 @@ class Attr:
 '''
 MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
-def readAttribute(medusa, endian = "="):
-    def __init__(self, val):
+def attributeDef(medusa, endian = "="):
+    def __init__(self, val=None):
         Attr.__init__(self, val)
 
     medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
@@ -135,13 +135,18 @@ def readAttribute(medusa, endian = "="):
 
     return attr
 
-class AttrInit:
+# attributes handing (pack, unpack, print format) for derived class (kclass, evtype)
+class Attrs(object):
     ''' 
     initializer reads from 'medusa' interface to initialize objects values
     TODO:   create object factory for this purpose, because we need empty initializer
             for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
+        Attrs.unpack(self,buf)
+
+    def unpack(self, buf=None):
+        self.orig = dict()
         for a in sorted(self.attrDef):
             attr = self.attrDef[a]
             offset = attr.offset
@@ -149,6 +154,7 @@ class AttrInit:
             data = None
             if buf != None:
                 data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
+                self.orig[attr.name] = data
             if data and len(data) == 1:
                 data = data[0]
             if data and attr.afterUnpack:
@@ -157,6 +163,19 @@ class AttrInit:
                 if len(data) == 1:
                     data = data[0]
             self.attr[a] = attr(data)
+
+    # TODO TODO TODO add encoding of None elements !!!
+    def pack(self, size):
+        data = bytearray(size)
+        for a in sorted(self.attrDef):
+            attr = self.attrDef[a]
+            offset = attr.offset
+            length = attr.length
+            val = self.attr[a].val
+            if attr.beforePack:
+                val = attr.beforePack[0](val,*attr.beforePack[1:])
+            struct.pack_into(attr.pythonType, data, offset, val) 
+        return data
 
     def __str__(self):
         s = str(self.__class__) + ' = {'

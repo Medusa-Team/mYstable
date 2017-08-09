@@ -1,22 +1,35 @@
 import struct
-from med_attr import Attr, AttrInit, readAttribute, MEDUSA_COMM_ATTRNAME_MAX
+import threading
+from med_attr import Attrs, attributeDef, MEDUSA_COMM_ATTRNAME_MAX
 import mcp
 
-class Kclass(AttrInit):
+class Kclass(Attrs):
     ''' 
     initializer reads from 'medusa' interface to initialize objects values
     TODO:   create object factory for this purpose, because we need empty initializer
         for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
+        self.fetch_lock = threading.Event()
+        self.update_lock = threading.Event()
         self.attr = dict()
-        AttrInit.__init__(self, buf)
+        super(Kclass, self).__init__(buf)
 
     def fetch(self):
-        mcp.doMedusaCommFetchRequest(medusa, self)
+        self.fetch_lock.clear()
+        mcp.doMedusaCommFetchRequest(self.medusa, self)
+        #thread = threading.Thread(target=mcp.doMedusaCommFetchRequest, args=(self.medusa, self))
+        #thread.start()
 
     def update(self):
-        mcp.doMedusaCommUpdateRequest(medusa, self)
+        self.update_lock.clear()
+        mcp.doMedusaCommUpdateRequest(self.medusa, self)
+
+    def pack(self):
+        return super(Kclass, self).pack(self.size)
+
+    def unpack(self, buf=None):
+        return super(Kclass, self).unpack(buf)
 
 ''' medusa class definition in 'include/linux/medusa/l4/comm.h'
     struct medusa_comm_kclass_s {
@@ -59,7 +72,7 @@ def readKclassdef(medusa, ENDIAN = "="):
     csizeReal = 0
     attrCnt = 0
     while True:
-        attr = readAttribute(medusa, ENDIAN)
+        attr = attributeDef(medusa, ENDIAN)
         if attr == None:
             break;
         kclass.attrDef[attr.name] = attr

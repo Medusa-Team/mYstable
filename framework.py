@@ -19,7 +19,7 @@ def exec(cmd, obj):
         return cmd(obj)
     #conpare dictionaries
     if isinstance(cmd, dict):
-        print('compare dictionaries')
+        #print('compare dictionaries')
         for k, v in cmd.items():
             if not exec(v, obj[k]):
                 False

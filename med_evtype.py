@@ -1,8 +1,8 @@
 import struct
-from med_attr import Attr, AttrInit, readAttribute, MEDUSA_COMM_ATTRNAME_MAX
+from med_attr import Attrs, attributeDef, MEDUSA_COMM_ATTRNAME_MAX
 from helpers import complement
 
-class Evtype(AttrInit):
+class Evtype(Attrs):
     ''' 
     initializer reads from 'medusa' interface to initialize objects values
     TODO:   create object factory for this purpose, because we need empty initializer
@@ -10,7 +10,7 @@ class Evtype(AttrInit):
     '''
     def __init__(self, buf=None):
         self.attr = dict()
-        AttrInit.__init__(self, buf)
+        super(Evtype, self).__init__(buf)
 
 # TODO TODO TODO: fix documentation in 'include/linux/medusa/l4/comm.h'
 # error in 'actbit' documentation in 'include/linux/medusa/l4/comm.h'
@@ -99,7 +99,7 @@ def readEvtypedef(medusa, ENDIAN = "="):
     sizeReal = 0
     attrCnt = 0
     while True:
-        attr = readAttribute(medusa, ENDIAN)
+        attr = attributeDef(medusa, ENDIAN)
         if attr == None:
             break;
         event.attrDef[attr.name] = attr
