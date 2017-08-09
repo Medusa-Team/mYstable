@@ -92,7 +92,6 @@ def readEvtypedef(medusa, ENDIAN = "="):
     event.objType = ev_kclass1
     event.objName = ev_name1
     event.attrDef = dict()
-    event.__getitem__ = lambda self, key: self.attr[key].val
 
     # read attributes
     attrMaxOffset = -1

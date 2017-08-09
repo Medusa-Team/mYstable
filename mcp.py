@@ -16,9 +16,9 @@ DEBUG = 1
 
 do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
 hosts = dict()          # list of hosts contolled by this instance of auth server
-fetch_req = dict()      # list of fetch requests 
+fetch_req = dict()      # list of fetch requests
 fetch_lock = threading.Lock()
-update_req = dict()     # list of update requests 
+update_req = dict()     # list of update requests
 update_lock = threading.Lock()
 
 # decorator
