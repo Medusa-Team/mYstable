@@ -1,4 +1,6 @@
 import os
+from threading import Thread
+from queue import Queue
 from comm import Comm
 import subprocess
 
@@ -6,22 +8,45 @@ def getCommType():
     return {"file": (CommFile, checkFiles, __name__)}
 
 class CommFile(Comm):
+    def init(self):
+        self.readFd = None
+        self.writeFd = None
+        self.write_thread = None
+        self.writeQueue = None
+
     def __init__(self, host):
         super().__init__(host)
-        self.fd = None
+        self.init()
 
     def __enter__(self):
-        self.fd = os.open(self.host_commdev, os.O_RDWR)
+        self.readFd = os.open(self.host_commdev, os.O_RDWR)
+        self.writeFd = os.dup(self.readFd )
+        self.writeQueue = Queue()
+        self.writeThread = Thread(target=CommFile.writeQueue, args=(self,))
+        self.writeThread.start()
         return self
 
     def __exit__(self, *args):
-        os.close(self.fd)
+        print("CommFile __exit__")
+        os.close(self.readFd)
+        os.close(self.writeFd)
+        self.init()
 
     def read(self, size):
-        return os.read(self.fd, size)
+        return os.read(self.readFd, size)
 
-    def write(self, what):
-        return os.write(self.fd, what)
+    def write(self, buf):
+        self.writeQueue.put(buf)
+
+    def writeQueue(self):
+        while True:
+                buf = self.writeQueue.get()
+                try:
+                    os.write(self.writeFd , buf)
+                except OSError as err:
+                    for arg in err.args:
+                        print(arg)
+                self.writeQueue.task_done()
 
 
 def checkFiles(hosts, good, conflict, wrong):
