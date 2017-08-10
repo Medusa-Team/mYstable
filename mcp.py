@@ -16,10 +16,6 @@ DEBUG = 1
 
 do_cmd = dict()         # list of pairs {cmd: do_cmd_fnc}
 hosts = dict()          # list of hosts contolled by this instance of auth server
-fetch_req = dict()      # list of fetch requests
-fetch_lock = threading.Lock()
-update_req = dict()     # list of update requests
-update_lock = threading.Lock()
 
 # decorator
 def registerCmd(cmd):
@@ -28,15 +24,12 @@ def registerCmd(cmd):
         return fnc
     return decorator
 
-def fnc_wait(obj, request_lock):
-    request_lock.wait()
-    print(obj)
-
-def doMedusaRequest(host, obj, cmd, queue, queue_lock, request_lock):
+def doMedusaRequest(host, obj, cmd, req_lock):
+    print("doMedusaRequest start")
     if obj == None:
         raise(MedusaCommError)
-    request_id = random.getrandbits(64)
-    head = struct.pack(med_endian.ENDIAN+"QQQ", cmd, obj.kclassid, request_id)
+    req_id = random.getrandbits(64)
+    head = struct.pack(med_endian.ENDIAN+"QQQ", cmd, obj.kclassid, req_id)
     data = obj.pack()
     try:
         host.write(head)
@@ -44,12 +37,15 @@ def doMedusaRequest(host, obj, cmd, queue, queue_lock, request_lock):
     except OSError as err:
         print_err(err)
 
-    queue_lock.acquire()
-    queue[request_id] = obj
-    queue_lock.release()
-
-    t = threading.Thread(target=fnc_wait, args=(obj,request_lock))
-    t.start()
+    host.requestsAuth2Med_lock.acquire()
+    try:
+        host.requestsAuth2Med[req_id] = obj
+    except Exception as e:
+        print(e)
+    host.requestsAuth2Med_lock.release()
+    print("doMedusaRequest wait_for_answer")
+    req_lock.wait()
+    print("doMedusaRequest end")
 
 '''
 *********************************************************************
@@ -78,8 +74,6 @@ authrequest message format:
 
 '''
 #MEDUSA_COMM_AUTHREQUEST    = 0x01 # k->c
-# TODO requests -> locking
-requests = []
 @registerCmd(MEDUSA_COMM_AUTHREQUEST)
 def doMedusaCommAuthrequest(host, acctype_id = None):
     if DEBUG > 1:
@@ -95,7 +89,6 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
     # TODO: MedusaCommError -> MedusaWhatEver
     if acctype == None:
         raise(MedusaCommError("unknown ACCESS type"))
-    requests.append(request_id)
 
     if DEBUG > 1:
         print("[0x%08X] %s: %s" % (request_id, acctype.name, acctype.subName), end='')
@@ -156,12 +149,10 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
     if DEBUG > 1:
         print('------- AUTHREQUEST END -------')
 
-    # TODO TODO TODO decide...
-    if DEBUG > 1:
-        print(host)
-    res = host.decide(event, sub, obj)
+    #if DEBUG > 1:
+    #    print(host)
 
-    doMedusaCommAuthanswer(host, requests.pop(), res)
+    host.requestsQueue.put((request_id, event, sub, obj))
 
 '''
 authanswer message format:
@@ -251,7 +242,8 @@ fetch_request message format
 #MEDUSA_COMM_FETCH_REQUEST  = 0x88 # c->k
 @registerCmd(MEDUSA_COMM_FETCH_REQUEST)
 def doMedusaCommFetchRequest(host, obj = None):
-    doMedusaRequest(host, obj, MEDUSA_COMM_FETCH_REQUEST, fetch_req, fetch_lock, obj.fetch_lock)
+    doMedusaRequest(host, obj, MEDUSA_COMM_FETCH_REQUEST, obj.fetch_lock)
+    return obj.reqAnswer
 
 '''
 fetch_answer message format
@@ -270,9 +262,9 @@ def doMedusaCommFetchAnswer(host):
         classid, fetch_id = struct.unpack(med_endian.ENDIAN+"QQ", host.read(8+8))
     except OSError as err:
         print_err(err)
-    fetch_lock.acquire()
-    obj = fetch_req.pop(fetch_id, None)
-    fetch_lock.release()
+    host.requestsAuth2Med_lock.acquire()
+    obj = host.requestsAuth2Med.pop(fetch_id, None)
+    host.requestsAuth2Med_lock.release()
     if obj == None:
         raise(MedusaCommError("FETCH_ANSWER: unknown FETCH_ANSWER id"))
 
@@ -285,6 +277,7 @@ def doMedusaCommFetchAnswer(host):
     except OSError as err:
         print_err(err)
 
+    obj.reqAnswer = MED_OK
     obj.fetch_lock.set()
 
 '''
@@ -308,7 +301,10 @@ update_request message format
 #MEDUSA_COMM_UPDATE_REQUEST = 0x8a # c->k
 @registerCmd(MEDUSA_COMM_UPDATE_REQUEST)
 def doMedusaCommUpdateRequest(host, obj = None):
-    doMedusaRequest(host, obj, MEDUSA_COMM_UPDATE_REQUEST, update_req, update_lock, obj.update_lock)
+    print("UpdateRequest start")
+    doMedusaRequest(host, obj, MEDUSA_COMM_UPDATE_REQUEST, obj.update_lock)
+    print("UpdateRequest end")
+    return obj.reqAnswer
 
 '''
 update_answer message format
@@ -323,13 +319,14 @@ update_answer message format
 #MEDUSA_COMM_UPDATE_ANSWER  = 0x0a # k->c
 @registerCmd(MEDUSA_COMM_UPDATE_ANSWER)
 def doMedusaCommUpdateAnswer(host):
+    print("UpdateAnswer start")
     try:
         classid, update_id, answer = struct.unpack(med_endian.ENDIAN+"QQI", host.read(8+8+4))
     except OSError as err:
         print_err(err)
-    update_lock.acquire()
-    obj = update_req.pop(update_id, None)
-    update_lock.release()
+    host.requestsAuth2Med_lock.acquire()
+    obj = host.requestsAuth2Med.pop(update_id, None)
+    host.requestsAuth2Med_lock.release()
     if obj == None:
         raise(MedusaCommError("UPDATE_ANSWER: unknown UPDATE_ANSWER id"))
 
@@ -339,7 +336,7 @@ def doMedusaCommUpdateAnswer(host):
         raise(MedusaCommError("UPDATE_ANSWER: unknown KCLASSID type: %x" % classid))
 
     # write result
-    obj.updateAnswer = answer
+    obj.reqAnswer = answer
     obj.update_lock.set()
     print("UPDATE_ANSWER: %x" % answer)
 
@@ -415,6 +412,7 @@ def doCommunicate(comm):
             else:
                 if not init_executed:
                     init_executed = True
-                    host.init()
+                    threading.Thread(target=host.init).start()
                 doMedusaCommAuthrequest(host, id)
+                print("---> AuthRequest suffessfully PUT <---")
 

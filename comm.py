@@ -9,8 +9,11 @@ by the class CommFile.
 
 import os
 from importlib import import_module
+from queue import Queue
+from threading import Thread, Lock, Event
 from constants import MED_OK, MED_NO
 from framework import exec
+from mcp import doMedusaCommAuthanswer
 
 
 def getSupportedComms():
@@ -40,7 +43,7 @@ def getSupportedComms():
     return comms
 
 
-class Comm:
+class Comm(object):
 
     def __init__(self, host):
         self.host_name = host['host_name']
@@ -51,6 +54,16 @@ class Comm:
         self.hook_list = self.hook_module.register.hooks
         if self.hook_list is None:
             self.hook_list = {}
+        # thread for auth requests handling
+        self.requestsQueue = Queue()
+        self.requestsThread = Thread(name="requestThread",target=Comm.decideQueue, args=(self,))
+        self.requestsThread.start()
+        # requests (fetch/update) from auth server to medusa
+        self.requestsAuth2Med = dict()
+        self.requestsAuth2Med_lock = Lock()
+        # event if 'init' from user module is done
+        self.init_executed = Event()
+        self.init_executed.clear()
 
     def __enter__(self):
         raise NotImplementedError
@@ -63,6 +76,18 @@ class Comm:
 
     def write(self, what):
         raise NotImplementedError
+
+    def decideQueue(self):
+        # do not remove next line 'open' unless you know what you are doing
+        f = open(os.devnull, 'w')
+        self.init_executed.wait()
+        while True:
+            request_id, evtype, subj, obj = self.requestsQueue.get()
+            res = self.decide(evtype, subj, obj)
+            print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype.name, request_id, res))
+            doMedusaCommAuthanswer(self, request_id, res)
+            self.requestsQueue.task_done()
+        f.close()
 
     def decide(self, evtype, subj, obj):
         def _doCheck(check, kobject):
@@ -96,6 +121,7 @@ class Comm:
                 hook['exec']()
             except:
                 pass
+        self.init_executed.set()
 
     def __str__(self):
         return '%s = {\n        host_name = %s\n        host_confdir = %s\n        host_commtype = %s\n        host_commdev = %s\n}' % (type(self), self.host_name, self.host_confdir, self.host_commtype, self.host_commdev)

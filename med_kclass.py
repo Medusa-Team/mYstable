@@ -1,5 +1,5 @@
 import struct
-import threading
+from threading import Event
 from med_attr import Attrs, attributeDef, MEDUSA_COMM_ATTRNAME_MAX
 import mcp
 
@@ -10,20 +10,18 @@ class Kclass(Attrs):
         for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
-        self.fetch_lock = threading.Event()
-        self.update_lock = threading.Event()
+        self.fetch_lock = Event()
+        self.update_lock = Event()
         self.attr = dict()
         super(Kclass, self).__init__(buf)
 
     def fetch(self):
         self.fetch_lock.clear()
-        mcp.doMedusaCommFetchRequest(self.medusa, self)
-        #thread = threading.Thread(target=mcp.doMedusaCommFetchRequest, args=(self.medusa, self))
-        #thread.start()
+        return mcp.doMedusaCommFetchRequest(self.medusa, self)
 
     def update(self):
         self.update_lock.clear()
-        mcp.doMedusaCommUpdateRequest(self.medusa, self)
+        return mcp.doMedusaCommUpdateRequest(self.medusa, self)
 
     def pack(self):
         return super(Kclass, self).pack(self.size)

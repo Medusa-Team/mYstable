@@ -6,21 +6,23 @@ register = Register()
 
 @register('init')
 def init():
-    #tmp = Fuck()
-    #tmp.attr['action'].val = 'hocico'
-    #tmp.attr['dev'].val = 0x76543211
-    #tmp.attr['ino'].val = 0xdeadbaba
-    #tmp.attr['path'].val = '/home/jano/asd.txt'
+    tmp = Fuck()
+    print(tmp)
+    tmp['action'] = 'hocico'
+    tmp['dev'] = 0x76543211
+    tmp['ino'] = 0xdeadbaba
+    tmp['path'] = '/home/jano/asd.txt'
     #tmp.fetch()
     #print(tmp)
     #tmp.attr['action'].val = 'append'
     #tmp.attr['path'].val = '/home/jano/asd2.txt'
     #tmp.update()
+
     s = Printk()
     s['message'] = "cislo 7 zije"
     s.update()
     s.update()
-    s.update()
+    #s.update()
 
 @register('getprocess')
 def getprocess(evtype, parent):

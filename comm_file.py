@@ -39,13 +39,13 @@ class CommFile(Comm):
 
     def writeQueue(self):
         while True:
-                buf = self.writeQueue.get()
-                try:
-                    os.write(self.writeFd , buf)
-                except OSError as err:
-                    for arg in err.args:
-                        print(arg)
-                self.writeQueue.task_done()
+            buf = self.writeQueue.get()
+            try:
+                os.write(self.writeFd , buf)
+            except OSError as err:
+                for arg in err.args:
+                    print(arg)
+            self.writeQueue.task_done()
 
 
 def checkFiles(hosts, good, conflict, wrong):
