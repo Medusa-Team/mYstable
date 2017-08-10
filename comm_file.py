@@ -8,7 +8,7 @@ def getCommType():
     return {"file": (CommFile, checkFiles, __name__)}
 
 class CommFile(Comm):
-    def init(self):
+    def initAttrs(self):
         self.readFd = None
         self.writeFd = None
         self.write_thread = None
@@ -16,21 +16,20 @@ class CommFile(Comm):
 
     def __init__(self, host):
         super().__init__(host)
-        self.init()
+        self.initAttrs()
 
     def __enter__(self):
         self.readFd = os.open(self.host_commdev, os.O_RDWR)
-        self.writeFd = os.dup(self.readFd )
+        self.writeFd = os.dup(self.readFd)
         self.writeQueue = Queue()
-        self.writeThread = Thread(target=CommFile.writeQueue, args=(self,))
+        self.writeThread = Thread(name="writeThread",target=CommFile.writeQueue, args=(self,))
         self.writeThread.start()
         return self
 
     def __exit__(self, *args):
-        print("CommFile __exit__")
         os.close(self.readFd)
         os.close(self.writeFd)
-        self.init()
+        self.initAttrs()
 
     def read(self, size):
         return os.read(self.readFd, size)
