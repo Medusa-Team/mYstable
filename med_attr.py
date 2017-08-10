@@ -145,6 +145,12 @@ class Attrs(object):
     def __init__(self, buf=None):
         Attrs.unpack(self,buf)
 
+    def __getitem__(self, key):
+        return self.attr[key].val
+
+    def __setitem__(self, key, val):
+        self.attr[key].val = val
+
     def unpack(self, buf=None):
         self.orig = dict()
         for a in sorted(self.attrDef):

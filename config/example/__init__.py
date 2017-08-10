@@ -17,7 +17,7 @@ def init():
     #tmp.attr['path'].val = '/home/jano/asd2.txt'
     #tmp.update()
     s = Printk()
-    s.attr['message'].val = "cislo 7 zije"
+    s['message'] = "cislo 7 zije"
     s.update()
     s.update()
     s.update()
