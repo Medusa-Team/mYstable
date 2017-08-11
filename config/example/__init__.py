@@ -4,10 +4,11 @@ import random
 
 register = Register()
 
-def printk(msg):
+def printk(*args):
     s = Printk()
-    s['message'] = msg
-    s.update()
+    for msg in args:
+        s['message'] = msg
+        s.update()
 
 @register('init')
 def init():
@@ -23,11 +24,8 @@ def init():
     #tmp.attr['path'].val = '/home/jano/asd2.txt'
     #tmp.update()
 
-    s = Printk()
-    s['message'] = "cislo 7 zije"
-    #s.update()
-    #s.update()
-    #s.update()
+    for i in range(1, 7):
+        printk("cislo %d zije" % i)
 
 @register('getprocess')
 def getprocess(evtype, parent):

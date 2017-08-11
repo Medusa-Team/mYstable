@@ -88,7 +88,7 @@ class Comm(object):
             print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype.name, request_id, res))
             doMedusaCommAuthanswer(self, request_id, res)
             self.requestsQueue.task_done()
-        f.close()
+        #f.close()
 
     def decide(self, evtype, subj, obj):
         def _doCheck(check, kobject):

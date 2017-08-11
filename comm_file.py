@@ -34,7 +34,9 @@ class CommFile(Comm):
 
     def read(self, size):
         print("select start %d" % size)
-        r, w, x = select([self.readFd], [], [])
+        r = []
+        while len(r) == 0:
+            r, w, x = select([self.readFd], [], [], .1)
         print("select end %d" % r[0])
         return os.read(self.readFd, size)
 
