@@ -17,10 +17,14 @@ class Kclass(Attrs):
 
     def fetch(self):
         self.fetch_lock.clear()
+        print('fetch: ')
+        print(self)
         return mcp.doMedusaCommFetchRequest(self.medusa, self)
 
     def update(self):
         self.update_lock.clear()
+        print('update: ')
+        print(self)
         return mcp.doMedusaCommUpdateRequest(self.medusa, self)
 
     def pack(self):

@@ -4,6 +4,11 @@ import random
 
 register = Register()
 
+def printk(msg):
+    s = Printk()
+    s['message'] = msg
+    s.update()
+
 @register('init')
 def init():
     tmp = Fuck()
@@ -20,12 +25,13 @@ def init():
 
     s = Printk()
     s['message'] = "cislo 7 zije"
-    s.update()
-    s.update()
+    #s.update()
+    #s.update()
     #s.update()
 
 @register('getprocess')
 def getprocess(evtype, parent):
+    printk("sakrasi")
     #print(evtype)
     #print(parent)
     return MED_OK

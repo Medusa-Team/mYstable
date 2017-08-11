@@ -2,6 +2,7 @@ import os
 from threading import Thread
 from queue import Queue
 from comm import Comm
+from select import select
 import subprocess
 
 def getCommType():
@@ -22,7 +23,7 @@ class CommFile(Comm):
         self.readFd = os.open(self.host_commdev, os.O_RDWR)
         self.writeFd = os.dup(self.readFd)
         self.writeQueue = Queue()
-        self.writeThread = Thread(name="writeThread",target=CommFile.writeQueue, args=(self,))
+        self.writeThread = Thread(name="writeThread",target=CommFile.writeQueueTask, args=(self,))
         self.writeThread.start()
         return self
 
@@ -32,16 +33,23 @@ class CommFile(Comm):
         self.initAttrs()
 
     def read(self, size):
+        print("select start %d" % size)
+        r, w, x = select([self.readFd], [], [])
+        print("select end %d" % r[0])
         return os.read(self.readFd, size)
 
     def write(self, buf):
+        print("write start %d" % len(buf))
         self.writeQueue.put(buf)
+        print("write end %d" % len(buf))
 
-    def writeQueue(self):
+    def writeQueueTask(self):
         while True:
             buf = self.writeQueue.get()
             try:
-                os.write(self.writeFd , buf)
+                print("real write start %d" % len(buf))
+                l = os.write(self.writeFd , buf)
+                print("real write end %d" % l)
             except OSError as err:
                 for arg in err.args:
                     print(arg)

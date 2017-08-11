@@ -32,8 +32,9 @@ def doMedusaRequest(host, obj, cmd, req_lock):
     head = struct.pack(med_endian.ENDIAN+"QQQ", cmd, obj.kclassid, req_id)
     data = obj.pack()
     try:
-        host.write(head)
-        host.write(data)
+        print("write request")
+        host.write(head + data)
+        print("write request end")
     except OSError as err:
         print_err(err)
 
@@ -145,6 +146,10 @@ def doMedusaCommAuthrequest(host, acctype_id = None):
 
         if DEBUG > 1:
             print("DEBUG: object '" + acctype.objName + "' of", obj)
+    # INIT
+    if not host.init_done:
+        host.init_done = True
+        threading.Thread(target=host.init).start()
 
     if DEBUG > 1:
         print('------- AUTHREQUEST END -------')
@@ -324,9 +329,13 @@ def doMedusaCommUpdateAnswer(host):
         classid, update_id, answer = struct.unpack(med_endian.ENDIAN+"QQI", host.read(8+8+4))
     except OSError as err:
         print_err(err)
+    print("losk_ack")
     host.requestsAuth2Med_lock.acquire()
+    print("lock_pop")
     obj = host.requestsAuth2Med.pop(update_id, None)
+    print("lock_release")
     host.requestsAuth2Med_lock.release()
+    print("lock_release")
     if obj == None:
         raise(MedusaCommError("UPDATE_ANSWER: unknown UPDATE_ANSWER id"))
 
@@ -387,12 +396,12 @@ def doCommunicate(comm):
             print("from medusa detected UNSUPPORTED byte order")
             return(-1)
 
-        init_executed = False
-
         while True:
             # read next chunk of data to do
             try:
+                print("read start")
                 id = struct.unpack(med_endian.ENDIAN+"Q",host.read(8))[0]
+                print("read end %x" % id)
             except Exception as err: #terminate this thread free hosts[comm.host_name]
                 print_err(err)
                 free_memory(comm)
@@ -407,12 +416,12 @@ def doCommunicate(comm):
                     free_memory(comm)
                     return -1
 
+                print("--> Action arived <--")
                 cmd = struct.unpack(med_endian.ENDIAN+"I",cmd)[0]
                 do_cmd.get(cmd, doMedusaCommUnknown)(host)
+                print("--> Action ended <--")
             else:
-                if not init_executed:
-                    init_executed = True
-                    threading.Thread(target=host.init).start()
+                print("--> do something <--")
                 doMedusaCommAuthrequest(host, id)
                 print("---> AuthRequest suffessfully PUT <---")
 

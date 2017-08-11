@@ -64,6 +64,7 @@ class Comm(object):
         # event if 'init' from user module is done
         self.init_executed = Event()
         self.init_executed.clear()
+        self.init_done = False
 
     def __enter__(self):
         raise NotImplementedError
