@@ -30,7 +30,7 @@ class Attr(object):
             s += ss.format(self.val)
         # val type is STRING
         elif type(self.val) == type(str()):
-            s += self.val
+            s += "'"+self.val+"'"
         # val type is BITMAP
         elif type(self.val) == type(bytes()):
             if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
@@ -130,7 +130,7 @@ def attributeDef(medusa, endian = "="):
             defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
             pythonType += str(alength)+'s'
-            attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]),)
+            attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]).strip(),)
             attr.beforePack = (str.encode, 'ascii')
             defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
