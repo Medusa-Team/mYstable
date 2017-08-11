@@ -33,25 +33,19 @@ class CommFile(Comm):
         self.initAttrs()
 
     def read(self, size):
-        print("select start %d" % size)
         r = []
         while len(r) == 0:
             r, w, x = select([self.readFd], [], [], .1)
-        print("select end %d" % r[0])
         return os.read(self.readFd, size)
 
     def write(self, buf):
-        print("write start %d" % len(buf))
         self.writeQueue.put(buf)
-        print("write end %d" % len(buf))
 
     def writeQueueTask(self):
         while True:
             buf = self.writeQueue.get()
             try:
-                print("real write start %d" % len(buf))
                 l = os.write(self.writeFd , buf)
-                print("real write end %d" % l)
             except OSError as err:
                 for arg in err.args:
                     print(arg)

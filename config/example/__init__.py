@@ -10,7 +10,7 @@ def printk(*args):
         s['message'] = msg
         s.update()
 
-@register('init')
+#@register('init')
 def init():
     tmp = Fuck()
     print(tmp)
@@ -29,7 +29,16 @@ def init():
 
 @register('getprocess')
 def getprocess(evtype, parent):
-    printk("sakrasi")
+    if parent['gid'] == 0:
+        printk("getprocess: parent gid ROOT")
+    else:
+        printk("getprocess: change parent gid to ROOT")
+        parent['gid'] = 0
+        parent.update()
+
+    tmp = Process()
+    print(tmp)
+
     #print(evtype)
     #print(parent)
     return MED_OK
@@ -38,6 +47,9 @@ def getprocess(evtype, parent):
 def getfile(evtype, new_file, parent):
     #print('som root vyfiltrovany cez dictionary')
     #print(evtype)
+    printk("getfile")
+    print(new_file)
+    f = File()
     return MED_OK
 
 @register('getfile', evtype={'filename': lambda x: x == '/'})

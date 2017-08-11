@@ -120,8 +120,8 @@ class Comm(object):
         for hook in self.hook_list.get('init', []):
             try:
                 hook['exec']()
-            except:
-                pass
+            except Exception as e:
+                print(e)
         self.init_executed.set()
 
     def __str__(self):

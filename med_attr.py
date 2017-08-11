@@ -117,21 +117,28 @@ def attributeDef(medusa, endian = "="):
     attr.typeStr = atypeStr
 
     pythonType = endian
+    defaultVal = None
     if atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_SIGNED:
             # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
             # time struct in kernel consists from two long values
             types = {'1':'b','2':'h','4':'i','8':'q','16':'2q'}
             pythonType += types[str(alength)]
+            defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_UNSIGNED:
             types = {'1':'B','2':'H','4':'I','8':'Q','16':'2Q'}
             pythonType += types[str(alength)]
+            defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
             pythonType += str(alength)+'s'
-            attr.afterUnpack = (bytes.decode, 'ascii')
+            attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]),)
             attr.beforePack = (str.encode, 'ascii')
+            defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
             pythonType += str(alength)+'s'
+            # TODO TODO TODO list of values... depending of size
+            defaultVal = 0
     attr.pythonType = pythonType
+    attr.defaultVal = defaultVal
 
     return attr
 
@@ -165,12 +172,14 @@ class Attrs(object):
                 data = data[0]
             if data and attr.afterUnpack:
                 # data can be an array (i.e. strings)
-                data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
+                #data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
+                data = attr.afterUnpack[0](data,*attr.afterUnpack[1:])
                 if len(data) == 1:
                     data = data[0]
+            if data == None:
+                data = attr.defaultVal
             self.attr[a] = attr(data)
 
-    # TODO TODO TODO add encoding of None elements !!!
     def pack(self, size):
         data = bytearray(size)
         for a in sorted(self.attrDef):

@@ -32,9 +32,7 @@ def doMedusaRequest(host, obj, cmd, req_lock):
     head = struct.pack(med_endian.ENDIAN+"QQQ", cmd, obj.kclassid, req_id)
     data = obj.pack()
     try:
-        print("write request")
         host.write(head + data)
-        print("write request end")
     except OSError as err:
         print_err(err)
 
@@ -399,9 +397,7 @@ def doCommunicate(comm):
         while True:
             # read next chunk of data to do
             try:
-                print("read start")
                 id = struct.unpack(med_endian.ENDIAN+"Q",host.read(8))[0]
-                print("read end %x" % id)
             except Exception as err: #terminate this thread free hosts[comm.host_name]
                 print_err(err)
                 free_memory(comm)
