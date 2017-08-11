@@ -18,11 +18,9 @@ class CommFile(Comm):
     def __init__(self, host):
         super().__init__(host)
         self.initAttrs()
-        self.pollObj = poll()
 
     def __enter__(self):
         self.readFd = os.open(self.host_commdev, os.O_RDWR)
-        self.pollObj.register(self.readFd, POLLIN)
         self.writeFd = os.dup(self.readFd)
         self.writeQueue = Queue()
         self.writeThread = Thread(name="writeThread",target=CommFile.writeQueueTask, args=(self,))
@@ -36,8 +34,15 @@ class CommFile(Comm):
 
     def read(self, size):
         r = []
+        pollObj = poll()
+        pollObj.register(self.readFd, POLLIN)
         while len(r) == 0:
-            r = self.pollObj.poll(10)
+<<<<<<< Updated upstream
+            r, w, x = select([self.readFd], [], [], .1)
+=======
+            r = pollObj.poll(100)
+        print("select end " )
+>>>>>>> Stashed changes
         return os.read(self.readFd, size)
 
     def write(self, buf):

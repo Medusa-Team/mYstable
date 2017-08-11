@@ -6,11 +6,13 @@ register = Register()
 
 def printk(*args):
     s = Printk()
-    for msg in args:
-        s['message'] = msg
-        s.update()
+    for m in args:
+        msg = str(m)
+        for i in msg.split('\n'):
+            s['message'] = i
+            s.update()
 
-#@register('init')
+@register('init')
 def init():
     tmp = Fuck()
     print(tmp)

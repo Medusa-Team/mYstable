@@ -25,7 +25,6 @@ def registerCmd(cmd):
     return decorator
 
 def doMedusaRequest(host, obj, cmd, req_lock):
-    print("doMedusaRequest start")
     if obj == None:
         raise(MedusaCommError)
     req_id = random.getrandbits(64)
@@ -42,9 +41,7 @@ def doMedusaRequest(host, obj, cmd, req_lock):
     except Exception as e:
         print(e)
     host.requestsAuth2Med_lock.release()
-    print("doMedusaRequest wait_for_answer")
     req_lock.wait()
-    print("doMedusaRequest end")
 
 '''
 *********************************************************************
@@ -304,9 +301,7 @@ update_request message format
 #MEDUSA_COMM_UPDATE_REQUEST = 0x8a # c->k
 @registerCmd(MEDUSA_COMM_UPDATE_REQUEST)
 def doMedusaCommUpdateRequest(host, obj = None):
-    print("UpdateRequest start")
     doMedusaRequest(host, obj, MEDUSA_COMM_UPDATE_REQUEST, obj.update_lock)
-    print("UpdateRequest end")
     return obj.reqAnswer
 
 '''
@@ -322,18 +317,13 @@ update_answer message format
 #MEDUSA_COMM_UPDATE_ANSWER  = 0x0a # k->c
 @registerCmd(MEDUSA_COMM_UPDATE_ANSWER)
 def doMedusaCommUpdateAnswer(host):
-    print("UpdateAnswer start")
     try:
         classid, update_id, answer = struct.unpack(med_endian.ENDIAN+"QQI", host.read(8+8+4))
     except OSError as err:
         print_err(err)
-    print("losk_ack")
     host.requestsAuth2Med_lock.acquire()
-    print("lock_pop")
     obj = host.requestsAuth2Med.pop(update_id, None)
-    print("lock_release")
     host.requestsAuth2Med_lock.release()
-    print("lock_release")
     if obj == None:
         raise(MedusaCommError("UPDATE_ANSWER: unknown UPDATE_ANSWER id"))
 
@@ -345,7 +335,6 @@ def doMedusaCommUpdateAnswer(host):
     # write result
     obj.reqAnswer = answer
     obj.update_lock.set()
-    print("UPDATE_ANSWER: %x" % answer)
 
 #UNKNOWN CMD
 def doMedusaCommUnknown(host):
@@ -412,12 +401,7 @@ def doCommunicate(comm):
                     free_memory(comm)
                     return -1
 
-                print("--> Action arived <--")
                 cmd = struct.unpack(med_endian.ENDIAN+"I",cmd)[0]
                 do_cmd.get(cmd, doMedusaCommUnknown)(host)
-                print("--> Action ended <--")
             else:
-                print("--> do something <--")
                 doMedusaCommAuthrequest(host, id)
-                print("---> AuthRequest suffessfully PUT <---")
-

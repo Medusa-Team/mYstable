@@ -56,8 +56,6 @@ class Comm(object):
             self.hook_list = {}
         # thread for auth requests handling
         self.requestsQueue = Queue()
-        self.requestsThread = Thread(name="requestThread",target=Comm.decideQueue, args=(self,))
-        self.requestsThread.start()
         # requests (fetch/update) from auth server to medusa
         self.requestsAuth2Med = dict()
         self.requestsAuth2Med_lock = Lock()
@@ -65,6 +63,8 @@ class Comm(object):
         self.init_executed = Event()
         self.init_executed.clear()
         self.init_done = False
+        self.requestsThread = Thread(name="requestThread",target=Comm.decideQueue, args=(self,))
+        self.requestsThread.start()
 
     def __enter__(self):
         raise NotImplementedError
@@ -79,8 +79,6 @@ class Comm(object):
         raise NotImplementedError
 
     def decideQueue(self):
-        # do not remove next line 'open' unless you know what you are doing
-        f = open(os.devnull, 'w')
         self.init_executed.wait()
         while True:
             request_id, evtype, subj, obj = self.requestsQueue.get()
@@ -88,7 +86,6 @@ class Comm(object):
             print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype.name, request_id, res))
             doMedusaCommAuthanswer(self, request_id, res)
             self.requestsQueue.task_done()
-        #f.close()
 
     def decide(self, evtype, subj, obj):
         def _doCheck(check, kobject):
