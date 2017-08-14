@@ -152,22 +152,33 @@ class Attrs(object):
     def __init__(self, buf=None):
         Attrs.unpack(self,buf)
 
-    def __getitem__(self, key):
-        return self.attr[key].val
+    def __getattr__(self, key):
+        if key.startswith("_") or key in ['update', 'unpack', 'pack', 'fetch']:
+            return object.__getattr__(self, key)
+        ret =  self._attr.get(key, None)
+        if ret is None:
+            raise AttributeError(key)
+        return ret.val
 
-    def __setitem__(self, key, val):
-        self.attr[key].val = val
+    def __setattr__(self, key, val):
+        if key.startswith("_") or key in ['update', 'unpack', 'pack', 'fetch']:
+            object.__setattr__(self, key, val)
+            return
+        ret = self._attr.get(key)
+        if ret is None:
+            raise AttributeError(key)
+        ret.val = val
 
     def unpack(self, buf=None):
-        self.orig = dict()
-        for a in sorted(self.attrDef):
-            attr = self.attrDef[a]
+        self._orig = dict()
+        for a in sorted(self._attrDef):
+            attr = self._attrDef[a]
             offset = attr.offset
             length = attr.length
             data = None
             if buf != None:
                 data = struct.unpack(attr.pythonType,bytes(buf[offset:offset+length]))
-                self.orig[attr.name] = data
+                self._orig[attr.name] = data
             if data and len(data) == 1:
                 data = data[0]
             if data and attr.afterUnpack:
@@ -178,15 +189,15 @@ class Attrs(object):
                     data = data[0]
             if data == None:
                 data = attr.defaultVal
-            self.attr[a] = attr(data)
+            self._attr[a] = attr(data)
 
     def pack(self, size):
         data = bytearray(size)
-        for a in sorted(self.attrDef):
-            attr = self.attrDef[a]
+        for a in sorted(self._attrDef):
+            attr = self._attrDef[a]
             offset = attr.offset
             length = attr.length
-            val = self.attr[a].val
+            val = self._attr[a].val
             if attr.beforePack:
                 val = attr.beforePack[0](val,*attr.beforePack[1:])
             struct.pack_into(attr.pythonType, data, offset, val) 
@@ -194,9 +205,9 @@ class Attrs(object):
 
     def __str__(self):
         s = str(self.__class__) + ' = {'
-        for a in sorted(self.attr):
-            s += '\n\t' + str(self.attr[a])
-        if self.attr:
+        for a in sorted(self._attr):
+            s += '\n\t' + str(self._attr[a])
+        if self._attr:
             s += '\n'
         s += '}'
 

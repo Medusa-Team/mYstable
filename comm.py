@@ -83,25 +83,25 @@ class Comm(object):
         while True:
             request_id, evtype, subj, obj = self.requestsQueue.get()
             res = self.decide(evtype, subj, obj)
-            print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype.name, request_id, res))
+            print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype._name, request_id, res))
             doMedusaCommAuthanswer(self, request_id, res)
             self.requestsQueue.task_done()
 
-    def decide(self, evtype, subj, obj):
+    def decide(self, event, subj, obj):
         def _doCheck(check, kobject):
             if check is None:
                 return True
             return exec(check, kobject)
 
-        for hook in self.hook_list.get(evtype.name, []):
+        for hook in self.hook_list.get(event._name, []):
             try:
-                if not _doCheck(hook['evtype'], evtype): continue
+                if not _doCheck(hook['event'], event): continue
                 if not _doCheck(hook['object'], obj): continue
                 if not _doCheck(hook['subject'], subj): continue
                 if obj is None:
-                    res = hook['exec'](evtype, subj)
+                    res = hook['exec'](event, subj)
                 else:
-                    res = hook['exec'](evtype, subj, obj)
+                    res = hook['exec'](event, subj, obj)
                 if res == MED_NO:
                     return res
             except Exception as err:

@@ -9,7 +9,7 @@ class Evtype(Attrs):
         for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
-        self.attr = dict()
+        self._attr = dict()
         super(Evtype, self).__init__(buf)
 
 # TODO TODO TODO: fix documentation in 'include/linux/medusa/l4/comm.h'
@@ -82,16 +82,16 @@ def readEvtypedef(medusa, ENDIAN = "="):
 
     event = type(name,(Evtype,),dict(__init__=__init__))
     #events[evid] = {'name':name, 'size':size, 'ev0':ev0, 'ev1':ev1, 'attr': None}
-    event.evid = evid
-    event.size = size
-    event.name = name
-    event.performedOn = actbitStr
-    event.actbit = actbit
-    event.subType = ev_kclass0
-    event.subName = ev_name0
-    event.objType = ev_kclass1
-    event.objName = ev_name1
-    event.attrDef = dict()
+    event._evid = evid
+    event._size = size
+    event._name = name
+    event._performedOn = actbitStr
+    event._actbit = actbit
+    event._subType = ev_kclass0
+    event._subName = ev_name0
+    event._objType = ev_kclass1
+    event._objName = ev_name1
+    event._attrDef = dict()
 
     # read attributes
     attrMaxOffset = -1
@@ -101,7 +101,7 @@ def readEvtypedef(medusa, ENDIAN = "="):
         attr = attributeDef(medusa, ENDIAN)
         if attr == None:
             break;
-        event.attrDef[attr.name] = attr
+        event._attrDef[attr.name] = attr
         attrCnt += 1
         if attr.offset > attrMaxOffset:
             sizeReal = attr.offset + attr.length

@@ -10,25 +10,25 @@ class Kclass(Attrs):
         for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
-        self.fetch_lock = Event()
-        self.update_lock = Event()
-        self.attr = dict()
+        self._fetch_lock = Event()
+        self._update_lock = Event()
+        self._attr = dict()
         super(Kclass, self).__init__(buf)
 
     def fetch(self):
-        self.fetch_lock.clear()
+        self._fetch_lock.clear()
         print('fetch: ')
         print(self)
-        return mcp.doMedusaCommFetchRequest(self.medusa, self)
+        return mcp.doMedusaCommFetchRequest(self._medusa, self)
 
     def update(self):
-        self.update_lock.clear()
+        self._update_lock.clear()
         print('update: ')
         print(self)
-        return mcp.doMedusaCommUpdateRequest(self.medusa, self)
+        return mcp.doMedusaCommUpdateRequest(self._medusa, self)
 
     def pack(self):
-        return super(Kclass, self).pack(self.size)
+        return super(Kclass, self).pack(self._size)
 
     def unpack(self, buf=None):
         return super(Kclass, self).unpack(buf)
@@ -63,11 +63,11 @@ def readKclassdef(medusa, ENDIAN = "="):
     print("REGISTER class '%s' with id %0x (size = %d) {" % (cname, kclassid, csize), end='')
     #kclasses[kclassid] = {'size':csize, 'name':cname, 'attr':None}
     kclass = type(cname,(Kclass,),dict(__init__ = __init__))
-    kclass.kclassid = kclassid
-    kclass.size = csize
-    kclass.name = cname
-    kclass.medusa = medusa
-    kclass.attrDef = dict()
+    kclass._kclassid = kclassid
+    kclass._size = csize
+    kclass._name = cname
+    kclass._medusa = medusa
+    kclass._attrDef = dict()
 
     # read attributes
     attrMaxOffset = -1
@@ -77,7 +77,7 @@ def readKclassdef(medusa, ENDIAN = "="):
         attr = attributeDef(medusa, ENDIAN)
         if attr == None:
             break;
-        kclass.attrDef[attr.name] = attr
+        kclass._attrDef[attr.name] = attr
         attrCnt += 1
         if attr.offset > attrMaxOffset:
             csizeReal = attr.offset + attr.length

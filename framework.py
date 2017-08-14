@@ -7,7 +7,7 @@ class Register():
         def register_decorator(func):
             hooks = self.hooks.setdefault(evname, [])
             hooks.append({'exec': func,
-                          'evtype': kwargs.get('evtype'),
+                          'event': kwargs.get('event'),
                           'object': kwargs.get('object'),
                           'subject': kwargs.get('subject')})
             return func
@@ -21,7 +21,7 @@ def exec(cmd, obj):
     if isinstance(cmd, dict):
         #print('compare dictionaries')
         for k, v in cmd.items():
-            if not exec(v, obj[k]):
+            if not exec(v, obj.__getattr__(k)):
                 False
         return True
     if isinstance(cmd, list):
@@ -30,7 +30,7 @@ def exec(cmd, obj):
             if len(cmd) != len(obj):
                return False
             for i in range(len(cmd)):
-               if not exec(cmd[i], obj[i]):
+               if not exec(cmd[i], obj.__getattr__(i)):
                   return False
             return True
         # this is OR
