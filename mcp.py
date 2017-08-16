@@ -29,7 +29,7 @@ def doMedusaRequest(host, obj, cmd, req_lock):
         raise(MedusaCommError)
     req_id = random.getrandbits(64)
     head = struct.pack(med_endian.ENDIAN+"QQQ", cmd, obj._kclassid, req_id)
-    data = obj.pack()
+    data = obj._pack()
     try:
         host.write(head + data)
     except OSError as err:
@@ -273,7 +273,7 @@ def doMedusaCommFetchAnswer(host):
         raise(MedusaCommError("FETCH_ANSWER: unknown KCLASSID type: %x" % classid))
 
     try:
-        obj.unpack(struct.unpack(med_endian.ENDIAN+str(classType.size)+"B", host.read(classType.size)))
+        obj._unpack(struct.unpack(med_endian.ENDIAN+str(classType._size)+"B", host.read(classType._size)))
     except OSError as err:
         print_err(err)
 

@@ -27,11 +27,11 @@ class Kclass(Attrs):
         print(self)
         return mcp.doMedusaCommUpdateRequest(self._medusa, self)
 
-    def pack(self):
-        return super(Kclass, self).pack(self._size)
+    def _pack(self):
+        return super(Kclass, self)._pack(self._size)
 
-    def unpack(self, buf=None):
-        return super(Kclass, self).unpack(buf)
+    def _unpack(self, buf=None):
+        return super(Kclass, self)._unpack(buf)
 
 ''' medusa class definition in 'include/linux/medusa/l4/comm.h'
     struct medusa_comm_kclass_s {

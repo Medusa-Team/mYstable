@@ -19,7 +19,7 @@ MED_COMM_TYPE_PRIMARY_KEY = 0x40 # this attribute is used to lookup object
 MED_COMM_TYPE_MASK        = 0x3f # clear read-only and primary key bits
 
 class Attr(object):
-    def __init__(self,val=None):
+    def __init__(self, val = None):
         self.val = val
 
     def __str__(self):
@@ -107,11 +107,11 @@ def attributeDef(medusa, endian = "="):
     # parse attr type and fill other Attr attributes
     atypeStr = ''
     if atype & MED_COMM_TYPE_READ_ONLY:
-            atypeStr += 'readonly '
-            attr.isReadonly = True
+        atypeStr += 'readonly '
+        attr.isReadonly = True
     if atype & MED_COMM_TYPE_PRIMARY_KEY:
-            atypeStr += 'primary '
-            attr.isPrimary = True
+        atypeStr += 'primary '
+        attr.isPrimary = True
     # clear READ_ONLY and PRIMARY_KEY bits
     atypeStr += med_comm_type[atype & MED_COMM_TYPE_MASK]
     attr.typeStr = atypeStr
@@ -119,24 +119,24 @@ def attributeDef(medusa, endian = "="):
     pythonType = endian
     defaultVal = None
     if atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_SIGNED:
-            # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
-            # time struct in kernel consists from two long values
-            types = {'1':'b','2':'h','4':'i','8':'q','16':'2q'}
-            pythonType += types[str(alength)]
-            defaultVal = 0
+        # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
+        # time struct in kernel consists from two long values
+        types = {'1':'b','2':'h','4':'i','8':'q','16':'2q'}
+        pythonType += types[str(alength)]
+        defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_UNSIGNED:
-            types = {'1':'B','2':'H','4':'I','8':'Q','16':'2Q'}
-            pythonType += types[str(alength)]
-            defaultVal = 0
+        types = {'1':'B','2':'H','4':'I','8':'Q','16':'2Q'}
+        pythonType += types[str(alength)]
+        defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
-            pythonType += str(alength)+'s'
-            attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]).strip(),)
-            attr.beforePack = (str.encode, 'ascii')
-            defaultVal = ''
+        pythonType += str(alength)+'s'
+        attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]).strip(),)
+        attr.beforePack = (str.encode, 'ascii')
+        defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
-            pythonType += str(alength)+'s'
-            # TODO TODO TODO list of values... depending of size
-            defaultVal = 0
+        pythonType += str(alength)+'s'
+        # TODO TODO TODO list of values... depending of size
+        defaultVal = 0
     attr.pythonType = pythonType
     attr.defaultVal = defaultVal
 
@@ -150,10 +150,10 @@ class Attrs(object):
             for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
-        Attrs.unpack(self,buf)
+        Attrs._unpack(self,buf)
 
     def __getattr__(self, key):
-        if key.startswith("_") or key in ['update', 'unpack', 'pack', 'fetch']:
+        if key.startswith("_") or key in ['update', 'fetch']:
             return object.__getattr__(self, key)
         ret =  self._attr.get(key, None)
         if ret is None:
@@ -161,7 +161,7 @@ class Attrs(object):
         return ret.val
 
     def __setattr__(self, key, val):
-        if key.startswith("_") or key in ['update', 'unpack', 'pack', 'fetch']:
+        if key.startswith("_") or key in ['update', 'fetch']:
             object.__setattr__(self, key, val)
             return
         ret = self._attr.get(key)
@@ -169,7 +169,7 @@ class Attrs(object):
             raise AttributeError(key)
         ret.val = val
 
-    def unpack(self, buf=None):
+    def _unpack(self, buf=None):
         self._orig = dict()
         for a in sorted(self._attrDef):
             attr = self._attrDef[a]
@@ -191,7 +191,7 @@ class Attrs(object):
                 data = attr.defaultVal
             self._attr[a] = attr(data)
 
-    def pack(self, size):
+    def _pack(self, size):
         data = bytearray(size)
         for a in sorted(self._attrDef):
             attr = self._attrDef[a]
