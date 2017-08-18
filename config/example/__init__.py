@@ -34,8 +34,10 @@ def getprocess(event, parent):
     else:
         printk("getprocess: change parent gid %d of '%s' to ROOT" % (parent.gid, parent.cmdline))
         parent.gid = 0
-    parent.med_oact = Bitmap(b'\xff\xff')
-    parent.med_sact = Bitmap(b'\xff\xff')
+    parent.med_oact = Bitmap(16)
+    parent.med_oact.set()
+    parent.med_sact = Bitmap(16)
+    parent.med_sact.set()
     parent.update()
     print(parent)
 
@@ -68,9 +70,9 @@ def getfile(event, new_file, parent):
 def getfile(event, new_file, parent):
     #print(event)
     printk("getfile('%s')" % event.filename)
-    new_file.med_oact = b'\xff\xff'
-    #new_file.med_sact = b'\xff\xff'
+    new_file.med_oact = Bitmap(b'\xff\xff')
     new_file.update()
+    print(event.filename)
     print(new_file)
     return MED_OK
 

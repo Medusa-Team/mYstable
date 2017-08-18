@@ -1,7 +1,33 @@
 import med_endian
 
+'''
+class Bitmap - simple interface for manipulating with bitmaps
+
+There are several possibility of initializing bitmaps:
+1. Bitmap(length), where 'length' is multiple of 8
+2. Bitmap(bitmap), where 'bitmap' is another bitmap
+'''
 class Bitmap(bytearray):
     def __init__(self, *args, **kwargs):
+        if len(args) != 1:
+            raise(BaseException("Bitmap constructor must have one argument"))
+        if not isinstance(args[0], (type(self), bytes, bytearray, int)):
+            raise(BaseException("Bitmap constructor arg is not a Bitmap, Bytes, Bytearray or Int object"))
+
+        # determine bitmap length and initializer by int
+        if isinstance(args[0], int):
+            if args[0] % 8:
+                raise(BaseException("Bitmap length must be multiply of 8"))
+            self.len = args[0]
+            args = [bytes(self.len//8),]
+        # determine bitmap length and initializer by another bitmap
+        elif isinstance(args[0], type(self)):
+            self.len = args[0].len
+            #args = [bytes(self.len//8),]
+        # determine bitmap length and initializer by another bitmap
+        elif isinstance(args[0], (bytes, bytearray)):
+            self.len = len(args[0]) * 8
+            
         super(Bitmap, self).__init__(*args, **kwargs)
 
     def __str__(self, separator=':'):
@@ -15,7 +41,7 @@ class Bitmap(bytearray):
             end = -1
             step = -1
         else:
-            raise(VALUE_ERROR)
+            raise(BaseException("Bitmap.__str__(): Unknown endianness"))
         four = 0
         for i in range(beg,end,step):
             if separator != None and four == 4:
@@ -27,18 +53,26 @@ class Bitmap(bytearray):
 
     # length of bitmap is len(bytearray) * 8
     def __len__(self):
-        return super(Bitmap, self).__len__() * 8
+        return self.len
 
     # get i-th bit of bitmap
-    def __getitem__(self, key):
-        val = super(Bitmap, self).__getitem__(key//8)
-        val = (val >> (key % 8)) & 0x01
-        #print("Bitmap __getitem(%d) = %d" % (key, val))
-        return val
+    #def __getitem__(self, key):
+    #    val = super(Bitmap, self).__getitem__(key//8)
+    #    val = (val >> (key % 8)) & 0x01
+    #    #print("Bitmap __getitem(%d) = %d" % (key, val))
+    #    return val
 
     # set i-th bit of bitmap
-    def __setitem__(self, key, val):
-        return super(Bitmap, self).__setitem__(key, val)
+    #def __setitem__(self, key, val):
+    #    raise(BaseException("Not implemented yet"))
+
+    def set(self):
+        for item, val in enumerate(self):
+            self[item] = 0xff
+
+    def clear(self):
+        for item, val in enumerate(self):
+            self[item] = 0x00
 
 class Register():
     def __init__(self):

@@ -43,21 +43,21 @@ class Attr(object):
             s += ')'
         s += ' = '
         # val type is SIGNED or UNSIGNED
-        if type(self.val) == type(int()):
+        if isinstance(self.val, int):
             ss = '{:0'+str(self.length)+'x}'
             s += ss.format(self.val)
         # val type is STRING
-        elif type(self.val) == type(str()):
+        elif isinstance(self.val, str):
             s += "'"+self.val+"'"
         # val type is BITMAP
-        elif type(self.val) == type(Bitmap()):
+        elif isinstance(self.val, Bitmap):
             s += '(Bitmap at '+str(self.offset)+') '
             s += str(self.val)
         # val type is BYTES
-        elif type(self.val) == type(bytearray()):
+        elif isinstance(self.val, (bytearray, bytes)):
             s += '(Bytes) '
             s += str(self.val)
-        elif type(self.val) == type(list()):
+        elif isinstance(self.val, list):
             # val type is array of STRING
             if self.type & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
                 s += str(self.val)
@@ -148,7 +148,7 @@ def attributeDef(medusa, endian = "="):
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
         pythonType += str(alength)+'s'
         attr.afterUnpack = (lambda x, *args: Bitmap(x),)
-        defaultVal = Bitmap(alength)
+        defaultVal = Bitmap(alength*8)
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BYTES:
         pythonType += str(alength)+'s'
         defaultVal = bytearray(alength)
