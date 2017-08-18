@@ -5,25 +5,79 @@ MED_COMM_TYPE_END         = 0x00 # end of attribute list
 MED_COMM_TYPE_UNSIGNED    = 0x01 # unsigned integer attr
 MED_COMM_TYPE_SIGNED      = 0x02 # signed integer attr
 MED_COMM_TYPE_STRING      = 0x03 # string attr
-MED_COMM_TYPE_BITMAP      = 0x04 # bitmap attr
+MED_COMM_TYPE_BITMAP      = 0x04 # bitmap attr, bitmap formed from dwords
+MED_COMM_TYPE_BYTES       = 0x05 # sequence of bytes
+
 med_comm_type = {
     MED_COMM_TYPE_END: 'none type',
     MED_COMM_TYPE_UNSIGNED: 'unsigned',
     MED_COMM_TYPE_SIGNED: 'signed',
     MED_COMM_TYPE_STRING: 'string',
     MED_COMM_TYPE_BITMAP: 'bitmap',
+    MED_COMM_TYPE_BYTES: 'bytes',
 }
 
 MED_COMM_TYPE_READ_ONLY   = 0x80 # this attribute is read-only
 MED_COMM_TYPE_PRIMARY_KEY = 0x40 # this attribute is used to lookup object
-MED_COMM_TYPE_MASK        = 0x3f # clear read-only and primary key bits
+MED_COMM_TYPE_LITTLE_ENDIAN = 0x30 # fixed endianness: little
+MED_COMM_TYPE_BIG_ENDIAN  = 0x20 # fixed endianness: big
+
+MED_COMM_TYPE_MASK        = 0x0f # clear read-only, primary key, little and big endian bits
+MED_COMM_TYPE_MASK_ENDIAN = 0x3f # get by mask only little and big endian bits
+
+class Bitmap(bytearray):
+    def __str__(self, separator=':'):
+        s = ''
+        if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
+            beg = 0
+            end = super(Bitmap, self).__len__()
+            step = 1
+        elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
+            beg = super(Bitmap, self).__len__() - 1
+            end = -1
+            step = -1
+        else:
+            raise(VALUE_ERROR)
+        four = 0
+        for i in range(beg,end,step):
+            if separator != None and four == 4:
+                s += separator
+                four = 0
+            s += '{:02x}'.format(super(Bitmap, self).__getitem__(i))
+            four += 1
+        return s
+
+    # length of bitmap is len(bytearray) * 8
+    def __len__(self):
+        return super(Bitmap, self).__len__() * 8
+
+    # get i-th bit of bitmap
+    def __getitem__(self, key):
+        val = super(Bitmap, self).__getitem__(key//8)
+        val = (val >> (key % 8)) & 0x01
+        #print("Bitmap __getitem(%d) = %d" % (key, val))
+        return val
+
+    # set i-th bit of bitmap
+    def __setitem__(self, key, val):
+        return super(Bitmap, self).__setitem__(key, val)
 
 class Attr(object):
     def __init__(self,val=None):
         self.val = val
 
     def __str__(self):
-        s = self.name + ' = '
+        s = self.name
+        if self.isReadonly or self.isPrimary:
+            s += ' ('
+            if self.isReadonly:
+                s += 'RO'
+            if self.isReadonly and self.isPrimary:
+                s += ','
+            if self.isPrimary:
+                s += 'P'
+            s += ')'
+        s += ' = '
         # val type is SIGNED or UNSIGNED
         if type(self.val) == type(int()):
             ss = '{:0'+str(self.length)+'x}'
@@ -32,24 +86,13 @@ class Attr(object):
         elif type(self.val) == type(str()):
             s += "'"+self.val+"'"
         # val type is BITMAP
-        elif type(self.val) == type(bytes()):
-            if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
-                beg = 0
-                end = len(self.val)
-                step = 1
-            elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
-                beg = len(self.val)-1
-                end = -1
-                step = -1
-            else:
-                raise(VALUE_ERROR)
-            four = 0
-            for i in range(beg,end,step):
-                if four == 4:
-                    s += ':'
-                    four = 0
-                s += '{:02x}'.format(self.val[i])
-                four += 1
+        elif type(self.val) == type(Bitmap()):
+            s += '(Bitmap at '+str(self.offset)+') '
+            s += str(self.val)
+        # val type is BYTES
+        elif type(self.val) == type(bytearray()):
+            s += '(Bytes) '
+            s += str(self.val)
         elif type(self.val) == type(list()):
             # val type is array of STRING
             if self.type & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
@@ -116,7 +159,15 @@ def attributeDef(medusa, endian = "="):
     atypeStr += med_comm_type[atype & MED_COMM_TYPE_MASK]
     attr.typeStr = atypeStr
 
+    # set default endianness
     pythonType = endian
+    # if it is specified by attribute, set this one
+    if atype & MED_COMM_TYPE_MASK_ENDIAN:
+        if atype & MED_COMM_TYPE_MASK_ENDIAN == MED_COMM_TYPE_LITTLE_ENDIAN:
+            pythonType = med_endian.LITTLE_ENDIAN
+        elif atype & MED_COMM_TYPE_MASK_ENDIAN == MED_COMM_TYPE_BIG_ENDIAN:
+            pythonType = med_endian.BIG_ENDIAN
+
     defaultVal = None
     if atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_SIGNED:
             # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
@@ -135,8 +186,11 @@ def attributeDef(medusa, endian = "="):
             defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
             pythonType += str(alength)+'s'
-            # TODO TODO TODO list of values... depending of size
-            defaultVal = 0
+            attr.afterUnpack = (lambda x, *args: Bitmap(x),)
+            defaultVal = Bitmap(alength)
+    elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BYTES:
+            pythonType += str(alength)+'s'
+            defaultVal = bytearray(alength)
     attr.pythonType = pythonType
     attr.defaultVal = defaultVal
 
@@ -182,8 +236,6 @@ class Attrs(object):
             if data and len(data) == 1:
                 data = data[0]
             if data and attr.afterUnpack:
-                # data can be an array (i.e. strings)
-                #data = list(attr.afterUnpack[0](d,*attr.afterUnpack[1:]) for d in data.split(b'\0') if d)
                 data = attr.afterUnpack[0](data,*attr.afterUnpack[1:])
                 if len(data) == 1:
                     data = data[0]

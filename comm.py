@@ -82,6 +82,7 @@ class Comm(object):
         self.init_executed.wait()
         while True:
             request_id, evtype, subj, obj = self.requestsQueue.get()
+            evtype._request_id = request_id
             res = self.decide(evtype, subj, obj)
             print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype._name, request_id, res))
             doMedusaCommAuthanswer(self, request_id, res)

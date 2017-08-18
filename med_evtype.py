@@ -9,6 +9,7 @@ class Evtype(Attrs):
         for 'UPDATE' medusa command
     '''
     def __init__(self, buf=None):
+        self._request_id = -1
         self._attr = dict()
         super(Evtype, self).__init__(buf)
 

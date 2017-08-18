@@ -171,7 +171,7 @@ def doMedusaCommAuthanswer(host, request_id = None, result = MED_NO):
         raise(MedusaCommError)
     answer = struct.pack(med_endian.ENDIAN+"QQH", cmd, request_id, result)
     if DEBUG:
-        printHex("DEBUG: answer: ", answer)
+        printHex("DEBUG: request_id="+str(request_id)+", answer: ", answer)
         print()
 
     try:
