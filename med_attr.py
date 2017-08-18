@@ -1,5 +1,6 @@
 import struct
 import med_endian
+from framework import Bitmap
 
 MED_COMM_TYPE_END         = 0x00 # end of attribute list
 MED_COMM_TYPE_UNSIGNED    = 0x01 # unsigned integer attr
@@ -24,43 +25,6 @@ MED_COMM_TYPE_BIG_ENDIAN  = 0x20 # fixed endianness: big
 
 MED_COMM_TYPE_MASK        = 0x0f # clear read-only, primary key, little and big endian bits
 MED_COMM_TYPE_MASK_ENDIAN = 0x3f # get by mask only little and big endian bits
-
-class Bitmap(bytearray):
-    def __str__(self, separator=':'):
-        s = ''
-        if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
-            beg = 0
-            end = super(Bitmap, self).__len__()
-            step = 1
-        elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
-            beg = super(Bitmap, self).__len__() - 1
-            end = -1
-            step = -1
-        else:
-            raise(VALUE_ERROR)
-        four = 0
-        for i in range(beg,end,step):
-            if separator != None and four == 4:
-                s += separator
-                four = 0
-            s += '{:02x}'.format(super(Bitmap, self).__getitem__(i))
-            four += 1
-        return s
-
-    # length of bitmap is len(bytearray) * 8
-    def __len__(self):
-        return super(Bitmap, self).__len__() * 8
-
-    # get i-th bit of bitmap
-    def __getitem__(self, key):
-        val = super(Bitmap, self).__getitem__(key//8)
-        val = (val >> (key % 8)) & 0x01
-        #print("Bitmap __getitem(%d) = %d" % (key, val))
-        return val
-
-    # set i-th bit of bitmap
-    def __setitem__(self, key, val):
-        return super(Bitmap, self).__setitem__(key, val)
 
 class Attr(object):
     def __init__(self,val=None):

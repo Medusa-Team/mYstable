@@ -1,3 +1,44 @@
+import med_endian
+
+class Bitmap(bytearray):
+    def __init__(self, *args, **kwargs):
+        super(Bitmap, self).__init__(*args, **kwargs)
+
+    def __str__(self, separator=':'):
+        s = ''
+        if med_endian.ENDIAN == med_endian.BIG_ENDIAN:
+            beg = 0
+            end = super(Bitmap, self).__len__()
+            step = 1
+        elif med_endian.ENDIAN == med_endian.LITTLE_ENDIAN:
+            beg = super(Bitmap, self).__len__() - 1
+            end = -1
+            step = -1
+        else:
+            raise(VALUE_ERROR)
+        four = 0
+        for i in range(beg,end,step):
+            if separator != None and four == 4:
+                s += separator
+                four = 0
+            s += '{:02x}'.format(super(Bitmap, self).__getitem__(i))
+            four += 1
+        return s
+
+    # length of bitmap is len(bytearray) * 8
+    def __len__(self):
+        return super(Bitmap, self).__len__() * 8
+
+    # get i-th bit of bitmap
+    def __getitem__(self, key):
+        val = super(Bitmap, self).__getitem__(key//8)
+        val = (val >> (key % 8)) & 0x01
+        #print("Bitmap __getitem(%d) = %d" % (key, val))
+        return val
+
+    # set i-th bit of bitmap
+    def __setitem__(self, key, val):
+        return super(Bitmap, self).__setitem__(key, val)
 
 class Register():
     def __init__(self):
