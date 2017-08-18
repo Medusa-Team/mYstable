@@ -68,7 +68,7 @@ def getfile(event, new_file, parent):
     #print(event)
     printk("getfile('%s')" % event.filename)
     new_file.med_oact = b'\xff\xff'
-    new_file.med_sact = b'\xff\xff'
+    #new_file.med_sact = b'\xff\xff'
     new_file.update()
     print(new_file)
     return MED_OK

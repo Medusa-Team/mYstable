@@ -9,11 +9,11 @@ class Kclass(Attrs):
     TODO:   create object factory for this purpose, because we need empty initializer
         for 'UPDATE' medusa command
     '''
-    def __init__(self, buf=None):
+    def __init__(self, buf=None, **kwargs):
         self._fetch_lock = Event()
         self._update_lock = Event()
         self._attr = dict()
-        super(Kclass, self).__init__(buf)
+        super(Kclass, self).__init__(buf, **kwargs)
 
     def fetch(self):
         self._fetch_lock.clear()
@@ -53,8 +53,6 @@ kclassdef message format
 '''
 def readKclassdef(medusa, ENDIAN = "="):
     medusa_comm_kclass_s = (ENDIAN+"QH"+str(MEDUSA_COMM_KCLASSNAME_MAX)+"s", 8+2+MEDUSA_COMM_KCLASSNAME_MAX)
-    def __init__(self, buf = None):
-        Kclass.__init__(self, buf)
 
     kclassid, csize, cname = \
         struct.unpack(medusa_comm_kclass_s[0], \
@@ -62,7 +60,7 @@ def readKclassdef(medusa, ENDIAN = "="):
     cname = cname.decode('ascii').split('\x00',1)[0]
     print("REGISTER class '%s' with id %0x (size = %d) {" % (cname, kclassid, csize), end='')
     #kclasses[kclassid] = {'size':csize, 'name':cname, 'attr':None}
-    kclass = type(cname,(Kclass,),dict(__init__ = __init__))
+    kclass = type(cname,(Kclass,), dict())
     kclass._kclassid = kclassid
     kclass._size = csize
     kclass._name = cname

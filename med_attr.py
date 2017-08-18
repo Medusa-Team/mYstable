@@ -77,9 +77,6 @@ class Attr(object):
 MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
 def attributeDef(medusa, endian = "="):
-    def __init__(self, val=None):
-        Attr.__init__(self, val)
-
     medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
     aoffset,alength,atype,aname = \
             struct.unpack(medusa_comm_attribute_s[0], \
@@ -91,7 +88,7 @@ def attributeDef(medusa, endian = "="):
     aname = aname.decode('ascii').split('\x00',1)[0]
     # create Attr object
     #attr = Attr(aname, atype, aoffset, alength)
-    attr = type(aname, (Attr,),dict(__init__ = __init__))
+    attr = type(aname, (Attr,), dict())
     attr.name = aname
     attr.type = atype
     attr.offset = aoffset
@@ -149,8 +146,13 @@ class Attrs(object):
     TODO:   create object factory for this purpose, because we need empty initializer
             for 'UPDATE' medusa command
     '''
-    def __init__(self, buf=None):
+    def __init__(self, buf=None, **kwargs):
         Attrs._unpack(self,buf)
+        for k, v in kwargs.items():
+            if k in self._attrDef:
+                self._attr[k] = v
+            else:
+                raise AttributeError(k)
 
     def __getattr__(self, key):
         if key.startswith("_") or key in ['update', 'fetch']:
@@ -166,6 +168,7 @@ class Attrs(object):
             return
         ret = self._attr.get(key)
         if ret is None:
+            print(self._attr)
             raise AttributeError(key)
         ret.val = val
 
