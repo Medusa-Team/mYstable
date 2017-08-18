@@ -1,5 +1,5 @@
 from constants import MED_OK, MED_NO
-from framework import Register
+from framework import Register, Bitmap
 import random
 
 register = Register()
@@ -34,9 +34,10 @@ def getprocess(event, parent):
     else:
         printk("getprocess: change parent gid %d of '%s' to ROOT" % (parent.gid, parent.cmdline))
         parent.gid = 0
-    parent.med_oact = b'\xff\xff'
-    parent.med_sact = b'\xff\xff'
+    parent.med_oact = Bitmap(b'\xff\xff')
+    parent.med_sact = Bitmap(b'\xff\xff')
     parent.update()
+    print(parent)
 
     tmp = Process()
     print(tmp)
