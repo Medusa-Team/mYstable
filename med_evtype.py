@@ -8,10 +8,9 @@ class Evtype(Attrs):
     TODO:   create object factory for this purpose, because we need empty initializer
         for 'UPDATE' medusa command
     '''
-    def __init__(self, buf=None):
-        self._request_id = -1
+    def __init__(self, buf=None, **kwargs):
         self._attr = dict()
-        super(Evtype, self).__init__(buf)
+        super(Evtype, self).__init__(buf, **kwargs)
 
 # TODO TODO TODO: fix documentation in 'include/linux/medusa/l4/comm.h'
 # error in 'actbit' documentation in 'include/linux/medusa/l4/comm.h'
@@ -61,9 +60,6 @@ def readEvtypedef(medusa, ENDIAN = "="):
         str(MEDUSA_COMM_ATTRNAME_MAX)+"s"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s",
         8+2+2+8+8+MEDUSA_COMM_EVNAME_MAX+2*MEDUSA_COMM_ATTRNAME_MAX)
 
-    def __init__(self, buf):
-        Evtype.__init__(self, buf)
-
     evid, size, actbit, ev_kclass0, ev_kclass1, name, ev_name0, ev_name1 = \
         struct.unpack(medusa_comm_evtype_s[0], \
         medusa.read(medusa_comm_evtype_s[1]))
@@ -81,7 +77,7 @@ def readEvtypedef(medusa, ENDIAN = "="):
     print("REGISTER evtype '%s' (%s, %s) with size=%d, id=%0x (%s, actbit = %s) {" % \
         (name, ev_name0, ev_name1, size, evid, actbitStr, hex(actbit)), end='')
 
-    event = type(name,(Evtype,),dict(__init__=__init__))
+    event = type(name,(Evtype,), dict())
     #events[evid] = {'name':name, 'size':size, 'ev0':ev0, 'ev1':ev1, 'attr': None}
     event._evid = evid
     event._size = size

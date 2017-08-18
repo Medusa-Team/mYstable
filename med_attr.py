@@ -27,7 +27,7 @@ MED_COMM_TYPE_MASK        = 0x0f # clear read-only, primary key, little and big 
 MED_COMM_TYPE_MASK_ENDIAN = 0x3f # get by mask only little and big endian bits
 
 class Attr(object):
-    def __init__(self,val=None):
+    def __init__(self, val = None):
         self.val = val
 
     def __str__(self):
@@ -84,9 +84,6 @@ class Attr(object):
 MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
 def attributeDef(medusa, endian = "="):
-    def __init__(self, val=None):
-        Attr.__init__(self, val)
-
     medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
     aoffset,alength,atype,aname = \
             struct.unpack(medusa_comm_attribute_s[0], \
@@ -98,7 +95,7 @@ def attributeDef(medusa, endian = "="):
     aname = aname.decode('ascii').split('\x00',1)[0]
     # create Attr object
     #attr = Attr(aname, atype, aoffset, alength)
-    attr = type(aname, (Attr,),dict(__init__ = __init__))
+    attr = type(aname, (Attr,), dict())
     attr.name = aname
     attr.type = atype
     attr.offset = aoffset
@@ -114,11 +111,11 @@ def attributeDef(medusa, endian = "="):
     # parse attr type and fill other Attr attributes
     atypeStr = ''
     if atype & MED_COMM_TYPE_READ_ONLY:
-            atypeStr += 'readonly '
-            attr.isReadonly = True
+        atypeStr += 'readonly '
+        attr.isReadonly = True
     if atype & MED_COMM_TYPE_PRIMARY_KEY:
-            atypeStr += 'primary '
-            attr.isPrimary = True
+        atypeStr += 'primary '
+        attr.isPrimary = True
     # clear READ_ONLY and PRIMARY_KEY bits
     atypeStr += med_comm_type[atype & MED_COMM_TYPE_MASK]
     attr.typeStr = atypeStr
@@ -134,27 +131,27 @@ def attributeDef(medusa, endian = "="):
 
     defaultVal = None
     if atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_SIGNED:
-            # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
-            # time struct in kernel consists from two long values
-            types = {'1':'b','2':'h','4':'i','8':'q','16':'2q'}
-            pythonType += types[str(alength)]
-            defaultVal = 0
+        # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
+        # time struct in kernel consists from two long values
+        types = {'1':'b','2':'h','4':'i','8':'q','16':'2q'}
+        pythonType += types[str(alength)]
+        defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_UNSIGNED:
-            types = {'1':'B','2':'H','4':'I','8':'Q','16':'2Q'}
-            pythonType += types[str(alength)]
-            defaultVal = 0
+        types = {'1':'B','2':'H','4':'I','8':'Q','16':'2Q'}
+        pythonType += types[str(alength)]
+        defaultVal = 0
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_STRING:
-            pythonType += str(alength)+'s'
-            attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]).strip(),)
-            attr.beforePack = (str.encode, 'ascii')
-            defaultVal = ''
+        pythonType += str(alength)+'s'
+        attr.afterUnpack = (lambda x, *args: ' '.join([i.decode() for i in x.split(b'\0')]).strip(),)
+        attr.beforePack = (str.encode, 'ascii')
+        defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
-            pythonType += str(alength)+'s'
-            attr.afterUnpack = (lambda x, *args: Bitmap(x),)
-            defaultVal = Bitmap(alength)
+        pythonType += str(alength)+'s'
+        attr.afterUnpack = (lambda x, *args: Bitmap(x),)
+        defaultVal = Bitmap(alength)
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BYTES:
-            pythonType += str(alength)+'s'
-            defaultVal = bytearray(alength)
+        pythonType += str(alength)+'s'
+        defaultVal = bytearray(alength)
     attr.pythonType = pythonType
     attr.defaultVal = defaultVal
 
@@ -167,11 +164,16 @@ class Attrs(object):
     TODO:   create object factory for this purpose, because we need empty initializer
             for 'UPDATE' medusa command
     '''
-    def __init__(self, buf=None):
-        Attrs.unpack(self,buf)
+    def __init__(self, buf=None, **kwargs):
+        Attrs._unpack(self,buf)
+        for k, v in kwargs.items():
+            if k in self._attrDef:
+                self._attr[k] = v
+            else:
+                raise AttributeError(k)
 
     def __getattr__(self, key):
-        if key.startswith("_") or key in ['update', 'unpack', 'pack', 'fetch']:
+        if key.startswith("_") or key in ['update', 'fetch']:
             return object.__getattr__(self, key)
         ret =  self._attr.get(key, None)
         if ret is None:
@@ -179,15 +181,16 @@ class Attrs(object):
         return ret.val
 
     def __setattr__(self, key, val):
-        if key.startswith("_") or key in ['update', 'unpack', 'pack', 'fetch']:
+        if key.startswith("_") or key in ['update', 'fetch']:
             object.__setattr__(self, key, val)
             return
         ret = self._attr.get(key)
         if ret is None:
+            print(self._attr)
             raise AttributeError(key)
         ret.val = val
 
-    def unpack(self, buf=None):
+    def _unpack(self, buf=None):
         self._orig = dict()
         for a in sorted(self._attrDef):
             attr = self._attrDef[a]
@@ -200,6 +203,7 @@ class Attrs(object):
             if data and len(data) == 1:
                 data = data[0]
             if data and attr.afterUnpack:
+                # data can be an array (i.e. strings)
                 data = attr.afterUnpack[0](data,*attr.afterUnpack[1:])
                 if len(data) == 1:
                     data = data[0]
@@ -207,7 +211,7 @@ class Attrs(object):
                 data = attr.defaultVal
             self._attr[a] = attr(data)
 
-    def pack(self, size):
+    def _pack(self, size):
         data = bytearray(size)
         for a in sorted(self._attrDef):
             attr = self._attrDef[a]

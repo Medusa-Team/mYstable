@@ -12,15 +12,13 @@ def printk(*args):
             s.message = i
             s.update()
 
-#@register('init')
+@register('init')
 def init():
     tmp = Fuck()
-    print(tmp)
+    printk(tmp)
     tmp.action = 'hocico'
-    tmp.dev = 0x76543211
-    tmp.ino = 0xdeadbaba
     tmp.path = '/home/jano/asd.txt'
-    #tmp.fetch()
+    tmp.fetch()
     #print(tmp)
     #tmp.attr['action'].val = 'append'
     #tmp.attr['path'].val = '/home/jano/asd2.txt'
@@ -36,7 +34,9 @@ def getprocess(event, parent):
     else:
         printk("getprocess: change parent gid %d of '%s' to ROOT" % (parent.gid, parent.cmdline))
         parent.gid = 0
-        parent.update()
+    parent.med_oact = b'\xff\xff'
+    parent.med_sact = b'\xff\xff'
+    parent.update()
 
     tmp = Process()
     print(tmp)
@@ -67,8 +67,10 @@ def getfile(event, new_file, parent):
 def getfile(event, new_file, parent):
     #print(event)
     printk("getfile('%s')" % event.filename)
+    new_file.med_oact = b'\xff\xff'
+    #new_file.med_sact = b'\xff\xff'
+    new_file.update()
     print(new_file)
-    f = File()
     return MED_OK
 
 @register('kill')
