@@ -1,5 +1,6 @@
 import struct
 import med_endian
+import bitarray
 from framework import Bitmap
 
 MED_COMM_TYPE_END         = 0x00 # end of attribute list
@@ -83,6 +84,17 @@ class Attr(object):
 '''
 MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
+
+def handleBitmap(x, convertBitmap):
+    """Handling AfterUnpack & BeforePack functionality"""
+    #print('handleBitmap x: ' + str(x))
+    if not isinstance(x, Bitmap) or (isinstance(x, Bitmap) and convertBitmap):
+        x = Bitmap(x)
+    if convertBitmap:
+        x.bytereverse()
+    return x
+
+
 def attributeDef(medusa, endian = "="):
     medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
     aoffset,alength,atype,aname = \
@@ -129,6 +141,7 @@ def attributeDef(medusa, endian = "="):
         elif atype & MED_COMM_TYPE_MASK_ENDIAN == MED_COMM_TYPE_BIG_ENDIAN:
             pythonType = med_endian.BIG_ENDIAN
 
+
     defaultVal = None
     if atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_SIGNED:
         # 16 bytes int only for acctype notify_change, '[a|c|m]time' attrs
@@ -146,9 +159,19 @@ def attributeDef(medusa, endian = "="):
         attr.beforePack = (str.encode, 'ascii')
         defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
-        pythonType += str(alength)+'s'
-        attr.afterUnpack = (lambda x, *args: Bitmap(x),)
-        defaultVal = Bitmap(alength*8)
+        #  check endian of attribute vs. default endian of bitmap
+        bitarrayEndian = bitarray.bitarray().endian()
+        if pythonType == convert_endian(bitarrayEndian):
+            #endiannes is equal - conversion not needed
+            convertBitmap = False
+        else:
+            convertBitmap = True
+
+        # endiannes is equal
+        attr.afterUnpack = (lambda x, *args: handleBitmap(x, convertBitmap),)
+        attr.beforePack = (lambda x, *args: handleBitmap(x, convertBitmap).tobytes(),)
+        pythonType += str(alength)+'s' # TODO what is this for?
+        defaultVal = Bitmap(alength*8) # TODO what is this for?
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BYTES:
         pythonType += str(alength)+'s'
         defaultVal = bytearray(alength)
@@ -157,7 +180,28 @@ def attributeDef(medusa, endian = "="):
 
     return attr
 
-# attributes handing (pack, unpack, print format) for derived class (kclass, evtype)
+
+
+def convert_endian(endian):
+    """Converts endian representation between medusa and module bitarray
+
+        endian representation in module bitarray: 'little', 'big'
+        endian representation in medusa: '<' (little), '>' (big)
+
+        function performs conversion between this representations.
+        e.g. 'little' -> '<', 'big' -> '>' and vice versa.
+    """
+
+    if endian == med_endian.LITTLE_ENDIAN:  # '<' -> 'little'
+        return 'little'
+    if endian == med_endian.BIG_ENDIAN:     # '>' -> 'big'
+        return 'big'
+    if endian == 'little':                  # 'little' -> '<'
+        return med_endian.LITTLE_ENDIAN
+    if endian == 'big':                     # 'big' -> '>'
+        return med_endian.BIG_ENDIAN
+
+    # attributes handing (pack, unpack, print format) for derived class (kclass, evtype)
 class Attrs(object):
     ''' 
     initializer reads from 'medusa' interface to initialize objects values
@@ -204,10 +248,10 @@ class Attrs(object):
                 data = data[0]
             if data and attr.afterUnpack:
                 # data can be an array (i.e. strings)
-                data = attr.afterUnpack[0](data,*attr.afterUnpack[1:])
-                if len(data) == 1:
+                data = attr.afterUnpack[0](data, attr.afterUnpack[1:])
+                if data is not None and len(data) == 1:
                     data = data[0]
-            if data == None:
+            if data is None:
                 data = attr.defaultVal
             self._attr[a] = attr(data)
 

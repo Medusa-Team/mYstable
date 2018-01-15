@@ -344,8 +344,9 @@ def print_err(err):
     for arg in err.args:
         print(arg)
 
+
 def free_memory(comm):
-    del hosts[comm.host_name]['kclass']
+    del hosts[comm.host_name]['kclasses']
     del hosts[comm.host_name]['events']
     del hosts[comm.host_name]
 
