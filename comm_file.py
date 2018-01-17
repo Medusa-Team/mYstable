@@ -4,6 +4,7 @@ from queue import Queue
 from comm import Comm
 from select import poll, POLLIN
 import subprocess
+import errno
 
 def getCommType():
     return {"file": (CommFile, checkFiles, __name__)}
@@ -38,7 +39,13 @@ class CommFile(Comm):
         r = []
         while len(r) == 0:
             r = self.pollObj.poll(10)
-        return os.read(self.readFd, size)
+        while True:
+            try:
+                return os.read(self.readFd, size)
+            except OSError as e:
+                if e.errno == errno.EAGAIN:
+                    continue
+                raise e
 
     def write(self, buf):
         self.writeQueue.put(buf)
