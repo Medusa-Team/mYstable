@@ -12,59 +12,30 @@ class Bitmap(bitarray):
     """Class Bitmap(bitarray) for handling bitmap creation & bitmap operations """
 
     def __new__(cls, *args, **kwargs):
+
         if len(args) != 1:
             raise (BaseException("Bitmap constructor must have one argument"))
+
         if not isinstance(args[0], (Bitmap, bytes, bytearray, int)):
             raise (BaseException("Bitmap constructor arg is not a Bitmap, Bytes, Bytearray or Int object"))
 
-        # determine bitmap length and initializer by int
+        # if Bitmap is created from Int number, it represents length that must be multiple of 8
         if isinstance(args[0], int):
             if args[0] % 8:
-                raise (BaseException("Bitmap length must be multiply of 8"))
-            else:
-                return super().__new__(cls, *args, **kwargs)
+                raise BaseException("Bitmap length must be multiple of 8")
 
-        elif isinstance(args[0], (bytes, bytearray)):
-            # create empty bitmap - argument None. and initialize it in _init_
-            return super().__new__(cls, None, **kwargs)
-
-        elif isinstance(args[0], Bitmap):
-            # create empty bitmap - argument None. and initialize it in _init_
-            return super().__new__(cls, None, **kwargs)
+        # create empty bitmap (argument None) and initialize it in _init_ according to args[0]
+        return super().__new__(cls, None, **kwargs)
 
     def __init__(self, *args, **kwargs):
 
-
-        '''
-        if len(args) != 1:
-            raise(BaseException("Bitmap constructor must have one argument"))
-        if not isinstance(args[0], (type(self), bytes, bytearray, int, bitarray)):
-            raise(BaseException("Bitmap constructor arg is not a Bitmap, Bytes, Bytearray, bitaaray or Int object"))
-
-        # determine bitmap length and initializer by int
         if isinstance(args[0], int):
-            if args[0] % 8:
-                raise(BaseException("Bitmap length must be multiply of 8"))
-            self.len = args[0]
-            args = bytes(self.len//8)
-        # determine bitmap length and initializer by another bitmap
-        elif isinstance(args[0], type(self)):
-            self.len = args[0].len
-            #args = [bytes(self.len//8),]
-        # determine bitmap length and initializer by another bitmap
-        elif isinstance(args[0], (bytes, bytearray)):
-            self.len = len(args[0]) * 8
-
-        print('super init')
-        super().__new__()
-        '''
-
-        if isinstance(args[0], int):
-            # Bitmap was created from int - se all bits to False
-            self.setall(False)
+            # initialize Bitmap instance with zeros according to Int
+            # bytes(args[0]) creates zero-filled bytes with given length
+            self.frombytes(bytes(args[0]))
 
         elif isinstance(args[0], (bytes, bytearray)):
-            # we have bytes for initializing
+            # we have bytes for initialization of Bitmap
             self.frombytes(args[0])
 
         elif isinstance(args[0], Bitmap):

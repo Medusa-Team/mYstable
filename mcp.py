@@ -346,6 +346,8 @@ def print_err(err):
 
 
 def free_memory(comm):
+    """Free memory used by structures of given host"""
+
     del hosts[comm.host_name]['kclasses']
     del hosts[comm.host_name]['events']
     del hosts[comm.host_name]

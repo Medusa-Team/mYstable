@@ -87,7 +87,8 @@ MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
 def handleBitmap(x, convertBitmap):
     """Handling AfterUnpack & BeforePack functionality"""
-    #print('handleBitmap x: ' + str(x))
+
+    
     if not isinstance(x, Bitmap) or (isinstance(x, Bitmap) and convertBitmap):
         x = Bitmap(x)
     if convertBitmap:
