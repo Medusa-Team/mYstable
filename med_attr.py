@@ -1,6 +1,7 @@
 import struct
 import med_endian
 import bitarray
+import copy
 from framework import Bitmap
 
 MED_COMM_TYPE_END         = 0x00 # end of attribute list
@@ -253,7 +254,7 @@ class Attrs(object):
                 if data is not None and len(data) == 1:
                     data = data[0]
             if data is None:
-                data = attr.defaultVal
+                data = copy.deepcopy(attr.defaultVal)
             self._attr[a] = attr(data)
 
     def _pack(self, size):
