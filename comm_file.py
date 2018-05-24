@@ -13,7 +13,7 @@ class CommFile(Comm):
     def initAttrs(self):
         self.readFd = None
         self.writeFd = None
-        self.write_thread = None
+        self.writeThread = None
         self.writeQueue = None
 
     def __init__(self, host):
@@ -28,6 +28,7 @@ class CommFile(Comm):
         self.writeQueue = Queue()
         self.writeThread = Thread(name="writeThread",target=CommFile.writeQueueTask, args=(self,))
         self.writeThread.start()
+        super().__enter__()
         return self
 
     def __exit__(self, *args):

@@ -1,8 +1,8 @@
 import struct
 import med_endian
-import bitarray
 import copy
-from framework import Bitmap
+from bitmap import Bitmap
+
 
 MED_COMM_TYPE_END         = 0x00 # end of attribute list
 MED_COMM_TYPE_UNSIGNED    = 0x01 # unsigned integer attr
@@ -27,6 +27,7 @@ MED_COMM_TYPE_BIG_ENDIAN  = 0x20 # fixed endianness: big
 
 MED_COMM_TYPE_MASK        = 0x0f # clear read-only, primary key, little and big endian bits
 MED_COMM_TYPE_MASK_ENDIAN = 0x3f # get by mask only little and big endian bits
+
 
 class Attr(object):
     def __init__(self, val = None):
@@ -88,7 +89,6 @@ MEDUSA_COMM_ATTRNAME_MAX   = 32-5
 
 def handleBitmap(x, convertBitmap):
     """Handling AfterUnpack & BeforePack functionality"""
-
     
     if not isinstance(x, Bitmap) or (isinstance(x, Bitmap) and convertBitmap):
         x = Bitmap(x)
@@ -97,7 +97,7 @@ def handleBitmap(x, convertBitmap):
     return x
 
 
-def attributeDef(medusa, endian = "="):
+def attributeDef(medusa, endian):
     medusa_comm_attribute_s = (endian+"HHB"+str(MEDUSA_COMM_ATTRNAME_MAX)+"s", 2+2+1+MEDUSA_COMM_ATTRNAME_MAX)
     aoffset,alength,atype,aname = \
             struct.unpack(medusa_comm_attribute_s[0], \
@@ -161,10 +161,8 @@ def attributeDef(medusa, endian = "="):
         attr.beforePack = (str.encode, 'ascii')
         defaultVal = ''
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BITMAP:
-        #  check endian of attribute vs. default endian of bitmap
-        bitarrayEndian = bitarray.bitarray().endian()
-        if pythonType == convert_endian(bitarrayEndian):
-            #endiannes is equal - conversion not needed
+        # check endian of attribute vs. default endian of bitmap
+        if endian[0] == pythonType[0]:
             convertBitmap = False
         else:
             convertBitmap = True
@@ -172,8 +170,8 @@ def attributeDef(medusa, endian = "="):
         # endiannes is equal
         attr.afterUnpack = (lambda x, *args: handleBitmap(x, convertBitmap),)
         attr.beforePack = (lambda x, *args: handleBitmap(x, convertBitmap).tobytes(),)
-        pythonType += str(alength)+'s' # TODO what is this for?
-        defaultVal = Bitmap(alength*8) # TODO what is this for?
+        pythonType += str(alength)+'s'
+        defaultVal = Bitmap(alength*8)
     elif atype & MED_COMM_TYPE_MASK == MED_COMM_TYPE_BYTES:
         pythonType += str(alength)+'s'
         defaultVal = bytearray(alength)
@@ -251,7 +249,9 @@ class Attrs(object):
             if data and attr.afterUnpack:
                 # data can be an array (i.e. strings)
                 data = attr.afterUnpack[0](data, attr.afterUnpack[1:])
-                if data is not None and len(data) == 1:
+                if data is None:
+                    raise ValueError("Method afterUnpack for attribute '{}' returned empty data.".format(attr.name))
+                if len(data) == 1:
                     data = data[0]
             if data is None:
                 data = copy.deepcopy(attr.defaultVal)

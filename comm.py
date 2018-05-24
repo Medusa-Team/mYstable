@@ -54,8 +54,10 @@ class Comm(object):
         self.hook_list = self.hook_module.register.hooks
         if self.hook_list is None:
             self.hook_list = {}
-        # thread for auth requests handling
-        self.requestsQueue = Queue()
+
+        self.requestsQueue = None
+        self.requestsThread = None
+
         # requests (fetch/update) from auth server to medusa
         self.requestsAuth2Med = dict()
         self.requestsAuth2Med_lock = Lock()
@@ -63,11 +65,13 @@ class Comm(object):
         self.init_executed = Event()
         self.init_executed.clear()
         self.init_done = False
-        self.requestsThread = Thread(name="requestThread",target=Comm.decideQueue, args=(self,))
-        self.requestsThread.start()
 
     def __enter__(self):
-        raise NotImplementedError
+
+        # thread for auth requests handling
+        self.requestsQueue = Queue()
+        self.requestsThread = Thread(name="requestThread", target=Comm.decideQueue, args=(self,))
+        self.requestsThread.start()
 
     def __exit__(self, *args):
         raise NotImplementedError
@@ -83,6 +87,7 @@ class Comm(object):
         while True:
             request_id, evtype, subj, obj = self.requestsQueue.get()
             evtype._request_id = request_id
+            print('before method decide')
             res = self.decide(evtype, subj, obj)
             print("Comm.decideQueue: evtype='%s', request_id=%x, res=%x" % (evtype._name, request_id, res))
             doMedusaCommAuthanswer(self, request_id, res)
@@ -91,19 +96,29 @@ class Comm(object):
     def decide(self, event, subj, obj):
         def _doCheck(check, kobject):
             if check is None:
+                print('docheck return True')
                 return True
+
+            print('docheck exec()')
             return exec(check, kobject)
 
+        print('method decide')
+
         for hook in self.hook_list.get(event._name, []):
+            print('for')
             try:
                 if not _doCheck(hook['event'], event): continue
                 if not _doCheck(hook['object'], obj): continue
                 if not _doCheck(hook['subject'], subj): continue
+
                 if obj is None:
+                    print('obj None')
                     res = hook['exec'](event, subj)
                 else:
+                    print('obj not None')
                     res = hook['exec'](event, subj, obj)
                 if res == MED_NO:
+                    print('MED_NO')
                     return res
             except Exception as err:
                 import traceback, sys
@@ -112,6 +127,7 @@ class Comm(object):
                     print("error in hook: %s" % arg)
                 pass #todo error msg
 
+        print('MED_OK')
         return MED_OK
 
     def init(self):

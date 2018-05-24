@@ -368,11 +368,10 @@ def doCommunicate(comm):
         # read greeting and set byte order
         try:
             greeting = host.read(8)
-        except Exception as err: #terminate this thread free hosts[comm.host_name]
+        except Exception as err:  # terminate this thread free hosts[comm.host_name]
             print_err(err)
             free_memory(comm)
             return -1
-
 
         end_lit = b"\x5a\x7e\x00\x66\x00\x00\x00\x00"
         end_big = b"\x00\x00\x00\x00\x66\x00\x7e\x5a"
@@ -384,13 +383,13 @@ def doCommunicate(comm):
             print("from medusa detected LITTLE ENDIAN byte order\n")
         else:
             print("from medusa detected UNSUPPORTED byte order")
-            return(-1)
+            return -1
 
         while True:
             # read next chunk of data to do
             try:
-                id = struct.unpack(med_endian.ENDIAN+"Q",host.read(8))[0]
-            except Exception as err: #terminate this thread free hosts[comm.host_name]
+                id = struct.unpack(med_endian.ENDIAN+"Q", host.read(8))[0]
+            except Exception as err:  # terminate this thread free hosts[comm.host_name]
                 print_err(err)
                 free_memory(comm)
                 return -1
@@ -399,12 +398,12 @@ def doCommunicate(comm):
             if id == 0:
                 try:
                     cmd = host.read(4)
-                except Exception as err: #terminate this thread free hosts[comm.host_name]
+                except Exception as err:  # terminate this thread free hosts[comm.host_name]
                     print_err(err)
                     free_memory(comm)
                     return -1
 
-                cmd = struct.unpack(med_endian.ENDIAN+"I",cmd)[0]
+                cmd = struct.unpack(med_endian.ENDIAN+"I", cmd)[0]
                 do_cmd.get(cmd, doMedusaCommUnknown)(host)
             else:
                 doMedusaCommAuthrequest(host, id)

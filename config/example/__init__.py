@@ -1,6 +1,8 @@
 from constants import MED_OK, MED_NO
-from framework import Register, Bitmap
+from framework import Register
+from bitmap import Bitmap
 import random
+import os
 
 register = Register()
 
@@ -14,21 +16,59 @@ def printk(*args):
 
 @register('init')
 def init():
+
+    #process1 = Process()
+    process2 = Process()
+
+    #process1.pid = 4783
+    #process1.fetch()
+    #process2.pid = 4783
+    #process2.fetch()
+
+    #process1.ecap[0] = True
+
+    #print('init process2.ecap before -----------------')
+    #print(process2.ecap)
+
+    #raise BaseException
+
+
+
+    #bm = Bitmap(bytes(16)).tobytes() # 00000000 00000000
+    #bm[0] = True
+    #process.ecap[0] = True
+    #process.update()
+    #process.fetch()
+    #print('init process.ecap after -----------------')
+    #print(process.ecap)
+    #print(super(Bitmap, process.ecap).__str__())
+
+
+
+    """
     tmp = Fuck()
     printk(tmp)
     tmp.action = 'hocico'
     tmp.path = '/home/jano/asd.txt'
-    tmp.fetch()
-    #print(tmp)
-    #tmp.attr['action'].val = 'append'
-    #tmp.attr['path'].val = '/home/jano/asd2.txt'
-    #tmp.update()
 
-    for i in range(1, 7):
-        printk("cislo %d zije" % i)
+
+    tmp.fetch()
+
+
+    print(tmp)
+    tmp.attr['action'].val = 'append'
+    tmp.attr['path'].val = '/home/jano/asd2.txt'
+    tmp.update()
+
+    #for i in range(1, 7):
+     #   printk("cislo %d zije" % i)
+    """
 
 @register('getprocess')
 def getprocess(event, parent):
+
+    printk('getprocess start')
+
     if parent.gid == 0:
         printk("getprocess: parent gid ROOT")
     else:
@@ -38,6 +78,7 @@ def getprocess(event, parent):
     parent.med_oact.set()
     parent.med_sact = Bitmap(16)
     parent.med_sact.set()
+
     parent.update()
     print(parent)
 
