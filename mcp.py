@@ -64,7 +64,7 @@ authrequest message format:
     size |  type    | content
     ----------------------------
       8  |  const   | acctype_id
-      4  |  const   | request_id, is always 0
+      8  |  const   | request_id
      var |  access  | access object
      var |  kobject | target[]
 
@@ -74,9 +74,9 @@ authrequest message format:
 def doMedusaCommAuthrequest(host, acctype_id = None):
     if DEBUG > 1:
         print('------- AUTHREQUEST BEG -------')
-    # remember that acctype_id is just readed
+    # remember that acctype_id has been read
     try:
-        request_id = struct.unpack(med_endian.ENDIAN+"I", host.read(4))[0]
+        request_id = struct.unpack(med_endian.ENDIAN+"Q", host.read(8))[0]
     except OSError as err:
         print_err(err)
 
@@ -159,7 +159,7 @@ authanswer message format:
     size |  type    | content
     --------------------------------
       8  |  const   | REQUEST_ANSWER
-      8  |  const   | request_id, for now ignored by kernel
+      8  |  const   | request_id
       2  |  const   | result_code
 '''
 #MEDUSA_COMM_AUTHANSWER     = 0x81 # c->k
