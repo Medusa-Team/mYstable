@@ -1,9 +1,10 @@
 from constants import MED_OK, MED_NO
-from framework import Register
+from framework import Register, NameSpace
 from bitmap import Bitmap
 import random
 import os
 
+ns = NameSpace()
 register = Register()
 
 def printk(*args):

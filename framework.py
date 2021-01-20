@@ -1,3 +1,15 @@
+class NameSpace(object):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(NameSpace, cls).__new__(cls)
+            cls._instance.init()
+        return cls._instance
+
+    def init(self):
+        pass
+
 
 class Register():
     def __init__(self):
